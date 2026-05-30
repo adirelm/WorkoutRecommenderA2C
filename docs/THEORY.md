@@ -77,7 +77,7 @@ $$
 \theta \;\leftarrow\; \theta \;+\; \alpha \sum_{t} \nabla_\theta \log \pi_\theta(a_t \mid s_t)\, \bigl(G_t - b\bigr)
 $$
 
-The brief's worked example (p. 13, §3.1): a 10-step rollout where nine steps each earn +10 and one step earns −100; the un-baselined update unfairly punishes the first nine "good" steps. Subtracting the running mean lets us evaluate actions *relatively*.
+Brief §3.2: trajectory return averages to 8. A trajectory returning 12 has advantage +4 (above baseline); a trajectory returning 5 has advantage −3 (below baseline). The policy is encouraged to repeat actions from the +4 trajectory and discouraged from those in the −3 trajectory.
 
 **How this maps to `src/`.** `src/training/baseline.py` implements `running_mean_baseline(returns)` and `value_baseline(states, V_psi)`. In REINFORCE we use the running-mean variant. In A2C we use the value-function baseline $b(s) \approx V^\pi(s)$ — which makes $G_t - b$ collapse into the Advantage (eq. 8).
 

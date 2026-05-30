@@ -25,9 +25,14 @@ satisfied, the test id planned to enforce it, and a priority of MUST / SHOULD /
 NICE. The action space throughout this trace is the 7-action discrete set
 `{0:Rest, 1:Push, 2:Pull, 3:Legs, 4:FullBody, 5:Conditioning, 6:Mobility}`
 fixed by ADR-002 and ADR-004; any deliverable that mentions an "action count"
-refers to this 7-action set. Open items that the matrix flags but does not
-yet bind are listed at the bottom under "Known gaps to revisit" — those rows
-must be closed before any submission tag is cut.
+refers to this 7-action set. The matrix below carries 71 rows across eight
+source streams (Brief §1–§3, Brief §7.2 dataset, Brief §7.6 analysis Q1–Q5
+plus §7.6.1 action-masking, Brief §7.7 deliverable artefacts, transcript
+grading hints TR1–TR10, A1 lecturer-feedback avoid/repeat A1A1–A1A8 / A1R1–A1R3,
+standing rules R1–R10, and CLAUDE.md hard constraints CL1–CL7). Open items
+that the matrix flags but does not yet bind are listed at the bottom under
+"Known gaps to revisit" — those rows must be closed before any submission tag
+is cut.
 
 | req_id | source | binding_text | deliverable_file_or_section | test_id_planned | priority |
 |---|---|---|---|---|---|
@@ -46,6 +51,25 @@ must be closed before any submission tag is cut.
 | 3.2 | Brief §3 | הפתרון: החסרת הממוצע — קו בסיס b: θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t)(G_t − b). | src/training/baseline.py | test_baseline_subtraction_in_update | MUST |
 | 3.3 (inferred) | Brief §3 | קו בסיס b(s) לא תלוי ב-a → לא מטה את הגרדיאנט (control variate). | docs/THEORY.md §3.3 (proof) + tests | test_baseline_unbiased_gradient | MUST |
 | 3.4 (inferred) | Brief §3 | Bias-Variance Trade-off: כאן צמצום שונות ללא הטיה. | docs/THEORY.md §3.4 + results/variance_comparison.png | test_variance_reduction_empirical | SHOULD |
+| D1 | Brief §7.2 | Kaggle dataset adnanelouardi/600k-fitness-exercise-and-workout-program-dataset; ODbL 1.0 license; cite in submission | docs/PRD.md §1.3 + docs/adr/ADR-002 + README §References | test_dataset_slug_in_config | MUST |
+| D2 | Brief §7.2 | Download procedure: kaggle CLI + cached parquet under data/raw/ (instructions/-only; not in repo) | src/data/kaggle_client.py + docs/PRD.md §3.1 F1 | test_kaggle_client_caches_to_parquet | MUST |
+| D3 | Brief §7.2 | Two CSV schemas: program_summary.csv (2598 rows) + fitness_exercises.csv (605k rows) joinable on 'title' | src/data/preprocessor.py | test_csv_schema_columns_present | MUST |
+| D4 | Brief §7.2.3 | Negative reps/sets caveat: NOT corruption — encodes seconds for timed exercises; convert via seconds_per_rep=3.0 (config) | src/data/preprocessor.py (apply_data_quality_contract) + config/config.yaml data_quality | test_negative_sets_reps_treated_as_seconds | MUST |
+| D5 | Brief §7.2.4 (eq. 13) | Single-trainee trajectory builder: filter chosen_program (≥8wk, Full Gym, 45-120min); daily aggregation total_volume_t = Σ(sets·reps); REST DAY insertion; trajectory (s_1..s_T) | src/data/aggregator.py | test_daily_aggregation_eq13 + test_rest_day_inserted | MUST |
+| D6 | Brief §7.7 | Submission cites dataset URL + key files + license + chosen program (PHUL primary) | README §Dataset + docs/PRD.md §10 | test_readme_cites_dataset_url | MUST |
+| DA1 | Brief §7.1.2 Part A | Formal written MDP definition (state/action/reward/transition) + pipeline pseudocode | docs/THEORY.md §1.1-1.4 + docs/PRD.md §1.5-1.7 | test_part_a_mdp_writeup_present | MUST |
+| DA2 | Brief §7.3.1 Part C | LSTM loss curves (train + val) + temporal-pattern discussion | results/lstm_loss.png + notebooks/analysis.ipynb cell 3 | test_lstm_loss_chart_exists | MUST |
+| DA3 | Brief §7.4.3 Part D | REINFORCE training Loss curve + avg-return graph + weekly-load variance diagnostic | results/reinforce_rewards.png + results/reinforce_variance.png + notebooks/analysis.ipynb cell 5 | test_reinforce_reward_chart_exists | MUST |
+| DA4 | Brief §7.5.1 Part E | A2C actor+critic Loss curves + side-by-side REINFORCE vs A2C comparison | results/a2c_training.png + results/comparison.png + notebooks/analysis.ipynb cells 7-8 | test_a2c_and_comparison_charts_exist | MUST |
+| DA5 | Brief §7.7 | Submission-list roll-up: preprocessing code + trainee trajectory + LSTM impl + REINFORCE impl + A2C impl + summary discussion | tests/test_submission_manifest.py asserts each artefact path | test_submission_manifest_all_present | MUST |
+| DA6 | Brief eq. 15 + eq. 17 | Reward eq.15 unit-test + Advantage eq.17 unit-test (first-class binding, not buried in ADR) | src/env/reward.py + src/training/a2c.py | test_spec_eq15_reward_decomposition + test_spec_eq17_advantage | MUST |
+| Q1 | Brief §7.6 Q1 | Did the LSTM learn realistic temporal structure? | notebooks/analysis.ipynb §discussion-q1 + docs/EXPERIMENTS.md | n/a (doc artifact) | MUST |
+| Q2 | Brief §7.6 Q2 | Does the policy collapse to a small action subset? | notebooks/analysis.ipynb §discussion-q2 — action histogram | test_action_diversity_above_floor | MUST |
+| Q3 | Brief §7.6 Q3 | Did A2C outperform REINFORCE (stability/convergence)? | notebooks/analysis.ipynb §discussion-q3 (REINFORCE vs A2C side-by-side) | n/a | MUST |
+| Q4 | Brief §7.6 Q4 | Limitations: training-program data ≠ real outcomes — answer head-on | notebooks/analysis.ipynb §discussion-q4 + README §Honest Limitations (a) | n/a | MUST |
+| Q5 | Brief §7.6 Q5 | Which physiological measurements (HR, soreness, strength logs) would improve the system? | notebooks/analysis.ipynb §discussion-q5 | n/a | MUST |
+| AM1 | Brief §7.6.1 | Action Masking proposal: logits→−∞ before softmax; Huang & Ontañón 2022 [8]; worked example (legs-day → mask Legs next day) | docs/adr/ADR-004-action-masking.md + src/env/action_mask.py + notebooks/analysis.ipynb §action-masking | test_action_mask_zeros_prob_for_invalid | MUST |
+| AM2 | Brief §7.6.1 | Simplified-reward acknowledgement + hierarchical-decision limitation discussion | notebooks/analysis.ipynb §reward-simplification + README §Honest Limitations (d) | n/a | MUST |
 | TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/comparison/reinforce_vs_a2c.png + docs/ANALYSIS.md | test_both_agents_train_to_completion | MUST |
 | TR2 | Transcript / grading_hints | STATE/ACTION DESIGN IS GRADED: justify which dataset columns become actions vs states (01:18:27). | docs/STATE_DESIGN.md + docs/ACTION_DESIGN.md (7-action set) | n/a (doc artifact) | MUST |
 | TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/world_model/lstm_world.py + src/training/rl_on_world_model.py | test_pipeline_lstm_then_rl | MUST |

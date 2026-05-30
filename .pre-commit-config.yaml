@@ -26,6 +26,6 @@ repos:
         pass_filenames: false
       - id: secret-scan
         name: Block common secret patterns
-        entry: bash -c 'git diff --cached --name-only -z | xargs -0 grep -lE "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9]{32,})" 2>/dev/null && exit 1 || exit 0'
+        entry: bash -c 'git diff --cached --name-only -z | xargs -0 grep -lE "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82}|sk-[A-Za-z0-9]{32,}|sk-ant-[A-Za-z0-9_-]{32,}|hf_[A-Za-z0-9]{34}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[0-9]+-[0-9]+-[0-9]+-[a-f0-9]+|(OPENAI_API_KEY|ANTHROPIC_API_KEY|HF_TOKEN|KAGGLE_KEY|AWS_SECRET_ACCESS_KEY)\s*=\s*[A-Za-z0-9/_+-]{20,})" 2>/dev/null && exit 1 || exit 0'
         language: system
         pass_filenames: false
