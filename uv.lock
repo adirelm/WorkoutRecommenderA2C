@@ -2527,7 +2527,7 @@ dependencies = [
     { name = "torch" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "ipykernel" },
     { name = "nbclient" },
@@ -2539,19 +2539,22 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ipykernel", marker = "extra == 'dev'", specifier = ">=6.29" },
     { name = "kaggle", specifier = ">=1.6" },
     { name = "matplotlib", specifier = ">=3.8" },
-    { name = "nbclient", marker = "extra == 'dev'", specifier = ">=0.10" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
     { name = "pyarrow", specifier = ">=15.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "scipy", specifier = ">=1.13" },
     { name = "torch", specifier = ">=2.2" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=6.29" },
+    { name = "nbclient", specifier = ">=0.10" },
+    { name = "pre-commit", specifier = ">=3.7" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "ruff", specifier = ">=0.6" },
+]
