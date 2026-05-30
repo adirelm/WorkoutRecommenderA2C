@@ -37,6 +37,10 @@ ignore = ["E501"]    # line-length is handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["PLR2004"]   # magic numbers in test asserts are fine
+# program_filter accepts many domain-driven config knobs (primary, fallbacks, min_weeks,
+# equipment, min_minutes, max_minutes) — refactoring into a dataclass deferred to keep
+# the public API straightforward for the SDK layer.
+"src/data/program_filter.py" = ["PLR0913"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
