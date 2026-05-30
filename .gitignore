@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Virtual env (managed by uv)
+.venv/
+venv/
+
+# Build artifacts
+dist/
+build/
+*.egg
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local environment
+.env
+.env.local
+
+# A3-specific: instructions/ is local-only (brief PDF, slides, transcript, lecturer template, lecturer feedback)
+# Per project rule — must NOT be referenced in shipped docs
+instructions/
+
+# Runtime data (regenerated; not version-controlled)
+data/raw/
+data/processed/
+results/checkpoints/
+results/figures/
+
+# Notebook scratch
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
