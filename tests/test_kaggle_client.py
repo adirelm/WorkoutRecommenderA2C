@@ -10,8 +10,8 @@ import pytest
 
 from src.data.kaggle_client import (
     DEFAULT_SLUG,
-    KaggleCLINotInstalledError,
     KaggleClient,
+    KaggleCLINotInstalledError,
     KaggleCredentialsMissingError,
 )
 

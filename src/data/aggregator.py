@@ -40,7 +40,7 @@ def _muscle_distribution(group: pd.DataFrame, total_volume: float) -> dict[str, 
     absent from the slice get a 0.0 share. Returns all-zeros when total_volume
     is non-positive.
     """
-    shares: dict[str, float] = {k: 0.0 for k in sorted(KNOWN_MUSCLE_GROUPS)}
+    shares: dict[str, float] = dict.fromkeys(sorted(KNOWN_MUSCLE_GROUPS), 0.0)
     if total_volume <= 0:
         return shares
     per_group = (group["sets"] * group["reps"]).groupby(group["muscle_group"]).sum()
@@ -89,7 +89,7 @@ def _rest_entry(day_in_cycle: int) -> DailyEntry:
         is_rest_day=True,
         total_volume=0.0,
         session_duration_min=0,
-        muscle_distribution={k: 0.0 for k in sorted(KNOWN_MUSCLE_GROUPS)},
+        muscle_distribution=dict.fromkeys(sorted(KNOWN_MUSCLE_GROUPS), 0.0),
     )
 
 

@@ -89,9 +89,7 @@ def test_error_message_lists_failed_criteria() -> None:
 def test_equipment_mismatch_recorded_in_failure_report() -> None:
     """Branch: row['equipment'] != equipment -> reason appended (line 33-35)."""
     df = _sample_df()
-    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "equipment"] = (
-        "Bodyweight"
-    )
+    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "equipment"] = "Bodyweight"
     with pytest.raises(ProgramNotFoundError) as exc_info:
         pick_program(df, equipment="Full Gym")
     msg = str(exc_info.value)
@@ -103,9 +101,7 @@ def test_equipment_mismatch_recorded_in_failure_report() -> None:
 def test_time_below_min_recorded_in_failure_report() -> None:
     """Branch: minutes < min_minutes -> reason appended (line 42-45)."""
     df = _sample_df()
-    df.loc[
-        df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"
-    ] = 30
+    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"] = 30
     with pytest.raises(ProgramNotFoundError) as exc_info:
         pick_program(df, min_minutes=45, max_minutes=120)
     msg = str(exc_info.value)
@@ -115,9 +111,7 @@ def test_time_below_min_recorded_in_failure_report() -> None:
 def test_time_above_max_recorded_in_failure_report() -> None:
     """Branch: minutes > max_minutes -> reason appended (line 42-45)."""
     df = _sample_df()
-    df.loc[
-        df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"
-    ] = 180
+    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"] = 180
     with pytest.raises(ProgramNotFoundError) as exc_info:
         pick_program(df, min_minutes=45, max_minutes=120)
     msg = str(exc_info.value)
@@ -127,9 +121,7 @@ def test_time_above_max_recorded_in_failure_report() -> None:
 def test_program_length_failure_recorded_in_failure_report() -> None:
     """Branch: program_length < min_weeks -> reason appended (line 36-39)."""
     df = _sample_df()
-    df.loc[
-        df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "program_length"
-    ] = 4
+    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "program_length"] = 4
     with pytest.raises(ProgramNotFoundError) as exc_info:
         pick_program(df, min_weeks=8)
     msg = str(exc_info.value)

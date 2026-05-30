@@ -28,10 +28,7 @@ _SETUP_HINT = (
     "~/.kaggle/kaggle.json (chmod 600) or export KAGGLE_USERNAME and "
     "KAGGLE_KEY. See https://www.kaggle.com/docs/api#authentication."
 )
-_CLI_HINT = (
-    "kaggle CLI not found on PATH. Run `uv sync` or `pip install kaggle`, "
-    "then re-run."
-)
+_CLI_HINT = "kaggle CLI not found on PATH. Run `uv sync` or `pip install kaggle`, then re-run."
 
 
 class KaggleCredentialsMissingError(RuntimeError):
@@ -114,6 +111,5 @@ class KaggleClient:
         except subprocess.CalledProcessError as e:
             stderr_tail = (e.stderr or "")[-500:]
             raise RuntimeError(
-                f"kaggle CLI failed for slug '{self.slug}' "
-                f"(exit {e.returncode}). stderr tail: {stderr_tail}"
+                f"kaggle CLI failed for slug '{self.slug}' (exit {e.returncode}). stderr tail: {stderr_tail}"
             ) from e
