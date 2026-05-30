@@ -1,0 +1,82 @@
+# WorkoutRecommenderA2C configuration
+# All algorithm-relevant parameters live here; never hardcoded in src/.
+
+version: "1.0.0"
+seed: 42
+
+environment:
+  episode_length: 28        # days per episode (brief §7.4)
+  state_dim: 12              # C2_moderate_12d (ADR-002)
+  action_count: 7            # ADR-001 / ADR-004
+  warmup_days: 7             # rolling-window warmup before policy decisions
+
+rewards:
+  lambda_1: 2.0              # overload weight (ADR-003)
+  lambda_2: 1.0              # imbalance weight (ADR-003)
+  w_progress: 0.7            # within-gain weight (ADR-003)
+  w_variety: 0.3             # within-gain weight (ADR-003)
+  overload_threshold_multiplier: 1.2     # vs user_baseline_7d_volume
+  overload_exponent: 1.5     # superlinear penalty (ADR-003)
+  imbalance_basis_days: 14
+  baseline_window_days: 28
+
+data_quality:
+  seconds_per_rep: 3.0        # time-encoded-reps conversion (PRD §1.5.0)
+  time_encoded_exercise_keywords: ["plank", "hold", "bridge", "wall-sit", "l-sit", "hollow-body"]
+  drop_negative_with_log: true
+
+lstm:
+  hidden_size: 64
+  num_layers: 1
+  dropout: 0.0
+  lr: 1.0e-3
+  epochs: 50
+  window: 7                  # rolling-window length
+  batch_size: 16
+  val_split_days: 7
+
+reinforce:
+  policy_hidden: 128         # TR5: 1-layer FC, 128 (brief lecture hint)
+  lr: 3.0e-4
+  gamma: 0.99
+  episodes: 500
+  baseline_alpha: 0.05       # running-mean update rate
+  entropy_coef: 0.0          # vanilla REINFORCE has no entropy bonus
+
+a2c:
+  actor_hidden: 128
+  critic_hidden: 128
+  actor_lr: 3.0e-4
+  critic_lr: 1.0e-3          # critic learns faster than actor
+  gamma: 0.99
+  entropy_coef: 0.01
+  episodes: 500
+  grad_clip_norm: 0.5
+
+action_masking:
+  rest_streak_threshold_days: 3      # mask Rest if last 3 days all Rest
+  legs_soreness_threshold: 0.8       # mask Legs if soreness_legs > this
+  conditioning_overload_threshold: 1.0   # mask Conditioning/HIIT if overload_t > this
+  mobility_always_legal: true
+
+dataset:
+  kaggle_slug: "adnanelouardi/600k-fitness-exercise-and-workout-program-dataset"
+  primary_program: "PHUL"             # 12wk, 60min, 4 days/wk (workflow recommendation)
+  fallback_programs: ["GZCLP", "nSuns 5/3/1"]
+  program_filter_min_weeks: 8
+  program_filter_equipment: "Full Gym"
+  program_filter_min_minutes: 45
+  program_filter_max_minutes: 120
+  license_acknowledgement: "ODbL 1.0 — Boostcamp.app — non-commercial use only — cited in submission"
+
+paths:
+  data_raw: "data/raw"
+  data_processed: "data/processed"
+  results: "results"
+  checkpoints: "results/checkpoints"
+  figures: "results/figures"
+
+device:
+  default: "cpu"             # determinism > speed (reproducibility caveat in README)
+  allow_cuda: false
+  allow_mps: false           # MPS LSTM kernels not bit-deterministic (README caveat)

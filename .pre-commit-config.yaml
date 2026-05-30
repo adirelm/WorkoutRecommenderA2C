@@ -1,0 +1,31 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+  - repo: local
+    hooks:
+      - id: file-size-150-loc
+        name: Enforce ≤150 LOC per .py file (CLAUDE.md §1)
+        entry: uv run python scripts/check_file_sizes.py
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: secret-scan
+        name: Block common secret patterns
+        entry: bash -c 'git diff --cached --name-only -z | xargs -0 grep -lE "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9]{32,})" 2>/dev/null && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
