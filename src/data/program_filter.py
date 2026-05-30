@@ -5,6 +5,7 @@ the dataset AND passes the equipment / length / session-time criteria.
 If none pass, raise ProgramNotFoundError with a full audit trail of why
 each candidate was rejected.
 """
+
 from __future__ import annotations
 
 import pandas as pd
@@ -30,19 +31,12 @@ def _evaluate(
     row = rows.iloc[0]
     reasons: list[str] = []
     if row["equipment"] != equipment:
-        reasons.append(
-            f"equipment={row['equipment']!r} != required {equipment!r}"
-        )
+        reasons.append(f"equipment={row['equipment']!r} != required {equipment!r}")
     if int(row["program_length"]) < min_weeks:
-        reasons.append(
-            f"program_length={int(row['program_length'])} weeks < min_weeks={min_weeks}"
-        )
+        reasons.append(f"program_length={int(row['program_length'])} weeks < min_weeks={min_weeks}")
     minutes = int(row["time_per_workout"])
     if minutes < min_minutes or minutes > max_minutes:
-        reasons.append(
-            f"time_per_workout={minutes} min outside "
-            f"[{min_minutes},{max_minutes}]"
-        )
+        reasons.append(f"time_per_workout={minutes} min outside [{min_minutes},{max_minutes}]")
     return reasons
 
 

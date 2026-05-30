@@ -9,6 +9,7 @@ Implements the rules defined in the PRD §1.5.0 data quality contract:
       reps_equivalent = |reps| / seconds_per_rep.
   (c) Add a 'reps_equivalent' column; return (cleaned_df, DataQualityReport).
 """
+
 from __future__ import annotations
 
 import pandas as pd
@@ -32,8 +33,17 @@ _MUSCLE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "pull": ("pull", "row", "chin", "curl", "lat", "deadlift"),
     "legs": ("squat", "lunge", "leg", "calf", "glute", "hip thrust", "step-up"),
     "core": ("plank", "crunch", "sit-up", "ab", "hollow", "bridge", "l-sit"),
-    "cardio": ("burpee", "run", "sprint", "jog", "cycle", "row erg", "jump rope",
-               "jumping", "mountain climber"),
+    "cardio": (
+        "burpee",
+        "run",
+        "sprint",
+        "jog",
+        "cycle",
+        "row erg",
+        "jump rope",
+        "jumping",
+        "mountain climber",
+    ),
     "mobility": ("stretch", "mobility", "foam roll", "yoga", "warm-up", "warmup"),
 }
 
@@ -52,8 +62,7 @@ def _is_time_encoded(exercise_name: str, sets: int, reps: int) -> bool:
     return reps > HIGH_REPS_SINGLE_SET_THRESHOLD and sets <= 1
 
 
-def _reps_equivalent(reps: int, sets: int, exercise_name: str,
-                     seconds_per_rep: float) -> float:
+def _reps_equivalent(reps: int, sets: int, exercise_name: str, seconds_per_rep: float) -> float:
     """Compute reps_equivalent for a single row."""
     if _is_time_encoded(exercise_name, sets, reps):
         return abs(reps) / seconds_per_rep
@@ -85,10 +94,14 @@ def apply_data_quality_contract(
     for _, row in work.iterrows():
         if _is_time_encoded(str(row["exercise_name"]), int(row["sets"]), int(row["reps"])):
             reclassified += 1
-        reps_eq.append(_reps_equivalent(
-            int(row["reps"]), int(row["sets"]),
-            str(row["exercise_name"]), seconds_per_rep,
-        ))
+        reps_eq.append(
+            _reps_equivalent(
+                int(row["reps"]),
+                int(row["sets"]),
+                str(row["exercise_name"]),
+                seconds_per_rep,
+            )
+        )
     work["reps_equivalent"] = reps_eq
 
     report = DataQualityReport(

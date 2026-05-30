@@ -13,10 +13,10 @@ raise :class:`KaggleCredentialsMissingError` with a one-line setup hint
 pointing at ``~/.kaggle/kaggle.json`` — failing loud is preferable to a
 silent retry storm.
 """
+
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -28,10 +28,18 @@ _SETUP_HINT = (
     "~/.kaggle/kaggle.json (chmod 600) or export KAGGLE_USERNAME and "
     "KAGGLE_KEY. See https://www.kaggle.com/docs/api#authentication."
 )
+_CLI_HINT = (
+    "kaggle CLI not found on PATH. Run `uv sync` or `pip install kaggle`, "
+    "then re-run."
+)
 
 
 class KaggleCredentialsMissingError(RuntimeError):
     """Raised when ~/.kaggle/kaggle.json is missing or KAGGLE_USERNAME/KAGGLE_KEY env unset."""
+
+
+class KaggleCLINotInstalledError(RuntimeError):
+    """Raised when the ``kaggle`` executable is not on PATH."""
 
 
 class KaggleClient:
@@ -62,6 +70,12 @@ class KaggleClient:
             raise KaggleCredentialsMissingError(_SETUP_HINT)
 
         self._invoke_kaggle_cli()
+        missing = [n for n in EXPECTED_CSVS if not (self.raw_dir / n).exists()]
+        if missing:
+            raise RuntimeError(
+                f"Kaggle reported success but expected CSVs missing in "
+                f"{self.raw_dir}: {missing}. Check the dataset slug or unzip step."
+            )
         return self.raw_dir
 
     # ----------------------------------------------------------------- helpers
@@ -74,9 +88,13 @@ class KaggleClient:
         return (Path.home() / ".kaggle" / "kaggle.json").exists()
 
     def _wipe_raw_dir(self) -> None:
-        if self.raw_dir.exists():
-            shutil.rmtree(self.raw_dir)
         self.raw_dir.mkdir(parents=True, exist_ok=True)
+        for name in EXPECTED_CSVS:
+            target = self.raw_dir / name
+            if target.exists():
+                target.unlink()
+        for zip_path in self.raw_dir.glob("*.zip"):
+            zip_path.unlink()
 
     def _invoke_kaggle_cli(self) -> None:
         cmd = [
@@ -89,4 +107,13 @@ class KaggleClient:
             str(self.raw_dir),
             "--unzip",
         ]
-        subprocess.run(cmd, check=True)
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except FileNotFoundError as e:
+            raise KaggleCLINotInstalledError(_CLI_HINT) from e
+        except subprocess.CalledProcessError as e:
+            stderr_tail = (e.stderr or "")[-500:]
+            raise RuntimeError(
+                f"kaggle CLI failed for slug '{self.slug}' "
+                f"(exit {e.returncode}). stderr tail: {stderr_tail}"
+            ) from e

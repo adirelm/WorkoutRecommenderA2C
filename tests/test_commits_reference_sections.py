@@ -29,7 +29,4 @@ def test_every_commit_starts_with_phase_n() -> None:
     """
     subjects = _git_log_subjects()
     bad = [s for s in subjects if not re.match(r"^Phase \d+( fix)?\b", s)]
-    assert not bad, (
-        "These commit subjects don't start with 'Phase N': "
-        + "\n".join(f"  - {s}" for s in bad)
-    )
+    assert not bad, "These commit subjects don't start with 'Phase N': " + "\n".join(f"  - {s}" for s in bad)

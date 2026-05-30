@@ -4,6 +4,7 @@ Loads the bundled CSV fixtures and exercises the full data flow:
 read CSVs -> pick_program -> filter by title -> apply_data_quality_contract
 -> daily_aggregate -> insert_rest_days, asserting cross-stage invariants.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -48,6 +49,4 @@ def test_phase1_pipeline_end_to_end_with_fixtures():
     # Muscle distribution shares sum to ~1.0 on every non-rest day.
     for e in trajectory:
         if not e.is_rest_day:
-            assert sum(e.muscle_distribution.values()) == pytest.approx(
-                1.0, abs=_FLOAT_TOL
-            )
+            assert sum(e.muscle_distribution.values()) == pytest.approx(1.0, abs=_FLOAT_TOL)

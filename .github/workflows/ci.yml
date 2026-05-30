@@ -21,6 +21,8 @@ jobs:
         run: uv sync --dev
       - name: Ruff lint
         run: uv run ruff check src/ tests/ main.py scripts/
+      - name: Ruff format check
+        run: uv run ruff format --check src/ tests/ main.py scripts/
       - name: File-size guard (≤150 LOC)
         run: uv run python scripts/check_file_sizes.py
       - name: Pytest with coverage

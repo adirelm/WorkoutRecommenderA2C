@@ -1,4 +1,5 @@
 """Tests for src/data/preprocessor.py (brief §7.2.3 data quality contract)."""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -76,3 +77,46 @@ def test_normalise_muscle_group_handles_known_names():
     assert normalise_muscle_group("Squat") == "legs"
     assert normalise_muscle_group("Plank") == "core"
     assert normalise_muscle_group("Burpee") == "cardio"
+
+
+def test_normalise_muscle_group_mobility_and_fallback():
+    """Cover preprocessor.py line 118 area: mobility bucket and the
+    push fallback path (v4p1 branch-coverage gap)."""
+    # Mobility bucket — previously uncovered.
+    assert normalise_muscle_group("Foam Roll") == "mobility"
+    assert normalise_muscle_group("Yoga Flow") == "mobility"
+    # Fallback path: no keyword match -> defaults to 'push'.
+    assert normalise_muscle_group("Some Unknown Move") == "push"
+    # Empty / None-ish input still resolves deterministically (push fallback).
+    assert normalise_muscle_group("") == "push"
+
+
+def test_high_reps_single_set_threshold_boundary():
+    """Cover preprocessor.py line 51 area: HIGH_REPS_SINGLE_SET_THRESHOLD
+    boundary behaviour for rule (b) without relying on the keyword path."""
+    # reps == 60 + sets == 1 -> NOT time-encoded (strict > threshold).
+    df_at = pd.DataFrame([_row(exercise_name="Mystery Move", sets=1, reps=60)])
+    cleaned, report = apply_data_quality_contract(df_at, seconds_per_rep=3.0)
+    assert cleaned.iloc[0]["reps_equivalent"] == pytest.approx(60.0)
+    assert report.time_encoded_reps_reclassified == 0
+
+    # reps == 61 + sets == 2 -> NOT time-encoded (sets > 1).
+    df_multi = pd.DataFrame([_row(exercise_name="Mystery Move", sets=2, reps=61)])
+    cleaned, report = apply_data_quality_contract(df_multi, seconds_per_rep=3.0)
+    assert cleaned.iloc[0]["reps_equivalent"] == pytest.approx(61.0)
+    assert report.time_encoded_reps_reclassified == 0
+
+    # reps == 61 + sets == 1 -> IS time-encoded (no keyword needed).
+    df_hi = pd.DataFrame([_row(exercise_name="Mystery Move", sets=1, reps=61)])
+    cleaned, report = apply_data_quality_contract(df_hi, seconds_per_rep=3.0)
+    assert cleaned.iloc[0]["reps_equivalent"] == pytest.approx(61.0 / 3.0)
+    assert report.time_encoded_reps_reclassified == 1
+
+
+def test_negative_reps_no_keyword_treated_as_seconds():
+    """Cover preprocessor.py line 60-61 branch in isolation: reps<0 path
+    without the keyword match contaminating it."""
+    df = pd.DataFrame([_row(exercise_name="Mystery Move", sets=1, reps=-30)])
+    cleaned, report = apply_data_quality_contract(df, seconds_per_rep=3.0)
+    assert cleaned.iloc[0]["reps_equivalent"] == pytest.approx(10.0)
+    assert report.time_encoded_reps_reclassified == 1

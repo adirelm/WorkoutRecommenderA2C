@@ -3,6 +3,7 @@
 The contract makes the architect/implementer boundary explicit: a heading,
 a 3-column table with at least 10 rows, and an 'Operating rule' paragraph.
 """
+
 import re
 from pathlib import Path
 
@@ -36,8 +37,7 @@ def test_contract_table_has_at_least_10_rows() -> None:
     body = text[header_idx:]
     rows = re.findall(r"^\|[^\n]+\|$", body, flags=re.MULTILINE)
     assert len(rows) >= 12, (
-        f"Contract table has only {len(rows)} pipe-delimited lines; "
-        "want ≥ 12 (header+sep+10 body rows)"
+        f"Contract table has only {len(rows)} pipe-delimited lines; want ≥ 12 (header+sep+10 body rows)"
     )
 
 

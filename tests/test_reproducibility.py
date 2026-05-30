@@ -33,8 +33,7 @@ def test_two_seeded_runs_produce_identical_tensors() -> None:
     out_a = _forward_once(seed=42)
     out_b = _forward_once(seed=42)
     assert torch.equal(out_a, out_b), (
-        "Two runs seeded with 42 produced different tensors; "
-        "reproducibility plumbing is broken."
+        "Two runs seeded with 42 produced different tensors; reproducibility plumbing is broken."
     )
 
 

@@ -1,4 +1,5 @@
 """Tests for src/data/kaggle_client.py (brief §7.2.2)."""
+
 from __future__ import annotations
 
 import shutil
@@ -9,6 +10,7 @@ import pytest
 
 from src.data.kaggle_client import (
     DEFAULT_SLUG,
+    KaggleCLINotInstalledError,
     KaggleClient,
     KaggleCredentialsMissingError,
 )
@@ -73,6 +75,7 @@ def test_force_refresh_invokes_cli(tmp_path, monkeypatch):
 
         class R:
             returncode = 0
+
         return R()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -97,3 +100,46 @@ def test_error_message_has_setup_hint(tmp_path, monkeypatch):
     with pytest.raises(KaggleCredentialsMissingError) as exc:
         client.ensure_dataset()
     assert "~/.kaggle/kaggle.json" in str(exc.value)
+
+
+def test_raises_when_kaggle_cli_missing(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    (fake_home / ".kaggle").mkdir(parents=True)
+    (fake_home / ".kaggle" / "kaggle.json").write_text('{"username":"x","key":"y"}')
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+
+    def fake_run(*args, **kwargs):
+        raise FileNotFoundError("kaggle")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    client = KaggleClient(raw_dir=raw_dir)
+    with pytest.raises(KaggleCLINotInstalledError):
+        client.ensure_dataset()
+
+
+def test_post_download_verification_catches_silent_failure(tmp_path, monkeypatch):
+    fake_home = tmp_path / "home"
+    (fake_home / ".kaggle").mkdir(parents=True)
+    (fake_home / ".kaggle" / "kaggle.json").write_text('{"username":"x","key":"y"}')
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+
+    def fake_run(*args, **kwargs):
+        # Simulate a "successful" CLI run that produces no CSVs.
+        class R:
+            returncode = 0
+
+        return R()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    client = KaggleClient(raw_dir=raw_dir)
+    with pytest.raises(RuntimeError) as exc:
+        client.ensure_dataset()
+    assert "missing" in str(exc.value)
