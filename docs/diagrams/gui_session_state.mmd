@@ -1,0 +1,55 @@
+flowchart LR
+    SS[(st.session_state)]
+
+    SS --> Home[gui.home.*]
+    Home --> Home_visited[gui.home.visited]
+    Home --> Home_theme[gui.home.theme]
+
+    SS --> Data[gui.data.*]
+    Data --> Data_df[gui.data.df]
+    Data --> Data_source[gui.data.source]
+    Data --> Data_seed[gui.data.seed]
+    Data --> Data_loaded_at[gui.data.loaded_at]
+
+    SS --> LSTM[gui.lstm.*]
+    LSTM --> LSTM_model[gui.lstm.model]
+    LSTM --> LSTM_history[gui.lstm.history]
+    LSTM --> LSTM_metrics[gui.lstm.metrics]
+    LSTM --> LSTM_trained[gui.lstm.trained]
+
+    SS --> REINFORCE[gui.reinforce.*]
+    REINFORCE --> RF_agent[gui.reinforce.agent]
+    REINFORCE --> RF_rewards[gui.reinforce.rewards]
+    REINFORCE --> RF_config[gui.reinforce.config]
+    REINFORCE --> RF_trained[gui.reinforce.trained]
+
+    SS --> A2C[gui.a2c.*]
+    A2C --> A2C_agent[gui.a2c.agent]
+    A2C --> A2C_rewards[gui.a2c.rewards]
+    A2C --> A2C_actor_loss[gui.a2c.actor_loss]
+    A2C --> A2C_critic_loss[gui.a2c.critic_loss]
+    A2C --> A2C_config[gui.a2c.config]
+    A2C --> A2C_trained[gui.a2c.trained]
+
+    SS --> Compare[gui.compare.*]
+    Compare --> Cmp_runs[gui.compare.runs]
+    Compare --> Cmp_seeds[gui.compare.seeds]
+    Compare --> Cmp_summary[gui.compare.summary]
+
+    SS --> Recommend[gui.recommend.*]
+    Recommend --> Rec_user_id[gui.recommend.user_id]
+    Recommend --> Rec_top_k[gui.recommend.top_k]
+    Recommend --> Rec_result[gui.recommend.result]
+    Recommend --> Rec_algo[gui.recommend.algo]
+
+    SS --> Mask[gui.action_masking.*]
+    Mask --> Mask_enabled[gui.action_masking.enabled]
+    Mask --> Mask_constraints[gui.action_masking.constraints]
+    Mask --> Mask_preview[gui.action_masking.preview]
+
+    SS --> Theory[gui.theory.*]
+    Theory --> Theory_section[gui.theory.section]
+
+    SS --> Disc[gui.discussion.*]
+    Disc --> Disc_notes[gui.discussion.notes]
+    Disc --> Disc_exported[gui.discussion.exported]

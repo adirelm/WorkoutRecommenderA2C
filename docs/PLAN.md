@@ -31,7 +31,7 @@ C4Container
 
     System_Boundary(app, "WorkoutRecommenderA2C (single-host uv app)") {
       Container(cli,     "CLI (cli/menu.py)",                 "Python · stdlib",          "Terminal menu — depends ONLY on SDK")
-      Container(gui,     "GUI (gui/main_window.py)",          "Tkinter + matplotlib",     "Dashboard — depends ONLY on SDK")
+      Container(gui,     "GUI (gui/app.py + pages/)",         "Streamlit ≥1.40 · plotly", "Multi-page dashboard (theme.py · state.py · components.py · charts.py · callbacks.py · data_helpers.py · explanations.py) — depends ONLY on SDK; Bar-Ilan theme (#003D7A / #FFCD00); live training curves via st.empty() placeholders + observer callbacks")
       Container(nb,      "Analysis Notebook",                 "Jupyter · imports SDK",    "§7.7 §7.6 deliverables: loss curves, reward graphs, REINFORCE-vs-A2C, LaTeX derivations")
       Container(sdk,     "WorkoutSDK (sdk.py)",               "Python facade",            "SINGLE business-logic entry point — CLAUDE.md §3")
       Container(svc,     "Services",                          "training · evaluation · masking", "TrainerLSTM, TrainerREINFORCE, TrainerA2C, RolloutEvaluator, ActionMaskService")
@@ -44,7 +44,7 @@ C4Container
     System_Ext(kaggle, "Kaggle", "adnanelouardi/600k-fitness-exercise-and-workout-program-dataset (one-time download)")
 
     Rel(user, cli, "uv run main.py")
-    Rel(user, gui, "uv run main.py gui")
+    Rel(user, gui, "uv run streamlit run src/workoutrl/gui/app.py")
     Rel(user, nb,  "uv run jupyter")
     Rel(cli, sdk,  "calls")
     Rel(gui, sdk,  "calls")
@@ -100,7 +100,7 @@ PRD under `docs/` and a definition-of-done in `docs/TODO.md`.
 | **services** | `services/trainer_lstm.py`, `services/trainer_reinforce.py`, `services/trainer_a2c.py`, `services/evaluator.py`, `services/metrics.py` | Training loops, rollout collection, advantage/return computation, checkpoint I/O | No direct user I/O |
 | **sdk** | `sdk.py` | Single façade — orchestrates services; the **only** import surface for UIs and the notebook | No training math inline |
 | **cli** | `cli/menu.py`, `cli/__main__.py` | Numeric terminal menu; arg-parse | Imports anything below SDK |
-| **gui** | `gui/main_window.py`, `gui/charts.py`, `gui/controller.py` | Tkinter window + matplotlib panels | Imports anything below SDK |
+| **gui** | `gui/app.py` (Streamlit entry), `gui/pages/` (multi-page modules — one file per §7 surface), `gui/theme.py` (Bar-Ilan palette `#003D7A` / `#FFCD00` / `#F5F7FA` + dark-mode toggle), `gui/state.py` (typed `gui.<page>.<key>` session-state accessors), `gui/components.py` (reusable widgets), `gui/charts.py` (plotly + matplotlib factory funcs, DPI=110, tight layout — never inline `plt.*`), `gui/callbacks.py` (observer pattern hooking into trainer iterators for live `st.empty()` updates — trainer code is NOT modified), `gui/data_helpers.py` (cached SDK calls via `@st.cache_data`), `gui/explanations.py` (LaTeX / markdown blurbs reused across pages) | Streamlit ≥ 1.40 + plotly ≥ 5.20 (+ optional `streamlit-extras`) multi-page dashboard wired through the SDK; live training curves via `st.empty()` placeholders + `callbacks.py` observers; per-page docstring opens with the brief § covered; tests use `streamlit.testing.v1.AppTest` | **Direct imports of `src.env`, `src.model`, `src.services`** — all business logic MUST go through `src.sdk.sdk`; no inline `plt.*` outside `charts.py`; no modification of trainer modules to push events (use `callbacks.py` observers); no un-namespaced `st.session_state` keys (must use `gui.<page>.<key>` via `state.py`) |
 | **utils** | `utils/seeding.py`, `utils/io.py` | Cross-cutting helpers (deterministic seeding — see §7; atomic checkpoint writes) | No business logic |
 | **notebook** | `notebooks/analysis.ipynb` | §7.7 deliverables as a *consumer* of the SDK; LaTeX cells next to plots | Re-implementing engine logic |
 
@@ -291,3 +291,56 @@ uv run jupyter lab notebooks/analysis.ipynb   # §7.7 figures + LaTeX
 - Kaggle CLI on macOS occasionally fails on first run with a
   permissions error on `~/.kaggle/kaggle.json` — fix with
   `chmod 600 ~/.kaggle/kaggle.json`.
+
+## §11 — GUI build sub-phase (Phase 9 expansion)
+
+Phase 9 (§2 row 9 — "GUI dashboard") is too large to be a single TDD
+commit; it is expanded here into a **5-workflow / 50-agent build
+sequence** so the human-architect ↔ AI-implementer trail (CLAUDE.md §1.4)
+is auditable per workflow rather than per file. Each workflow is its own
+TDD commit on `assignment-3`; each agent has a written sub-spec the
+human approves *before* code is generated, and each agent's output is a
+focused PR-sized diff (≤ ~150 LOC added across ≤ 2 files, per CLAUDE.md
+§1).
+
+**Shared contract (every agent in this sub-phase MUST follow).**
+- Framework: **Streamlit ≥ 1.40** + **plotly ≥ 5.20** + optional `streamlit-extras`.
+- All GUI code under `src/workoutrl/gui/`; layer rules in §3 row `gui` apply.
+- Theme: Bar-Ilan primary `#003D7A`, accent `#FFCD00`, light bg `#F5F7FA`; dark-mode via Streamlit's built-in toggle.
+- Session-state keys namespaced `gui.<page>.<key>` and accessed only via `src/workoutrl/gui/state.py`.
+- Every page imports business logic **only** from `src.workoutrl.sdk.sdk` — never `src.workoutrl.env` / `.model` / `.services` (CLAUDE.md §3).
+- All charts go through `src/workoutrl/gui/charts.py` factories (DPI=110, tight layout); no inline `plt.*` outside that file.
+- Live training charts use `st.empty()` placeholders + iterator callbacks via `src/workoutrl/gui/callbacks.py` — **trainer modules are not modified**; the observer pattern keeps the SDK boundary intact.
+- Every file ≤ **150 LOC** (CLAUDE.md §1). Split if needed.
+- Tests use `streamlit.testing.v1.AppTest` (Streamlit's headless harness) and run under `uv run pytest`.
+- Each page module's docstring opens with the brief § it covers (e.g. `"""§7.4 REINFORCE training page."""`).
+
+**Build sequence (5 workflows × 10 agents = 50 agents).**
+
+| WF | Workflow | Agents (10) | TDD commit at end |
+|---|---|---|---|
+| **WF-1** | **Foundation & theming** | A1 scaffolding (`gui/app.py` entry, `pages/` dir, multipage routing) · A2 `theme.py` (Bar-Ilan palette, dark-mode toggle, `set_page_config`) · A3 `state.py` (typed `gui.<page>.<key>` accessor, namespaced helpers) · A4 `components.py` (header bar, footer, sidebar nav) · A5 `charts.py` plotly factories (line/bar/heatmap defaults, DPI=110) · A6 `charts.py` matplotlib factories (fallback for notebook-shaped figures) · A7 `data_helpers.py` (`@st.cache_data` SDK wrappers) · A8 `callbacks.py` (observer base class + epoch/episode iterators) · A9 `explanations.py` (LaTeX blurbs for eq. 13–17) · A10 `tests/gui/test_foundation.py` (`AppTest` smoke: app boots, all pages reachable, theme applied) | `feat(gui): WF-1 foundation + theming` |
+| **WF-2** | **Data & environment surfaces** | A11 `pages/01_overview.py` (project summary, §7 link table) · A12 `pages/02_data.py` (Kaggle status, cleaning report viewer) · A13 `pages/03_trajectory.py` (synthetic-trainee inspector, eq. 13 daily aggregation) · A14 plotly muscle-distribution stacked-bar in `charts.py` · A15 plotly volume-time-series in `charts.py` · A16 `pages/04_environment.py` (action-mask explorer — toggle state, see masked actions) · A17 `pages/05_reward.py` (eq. 15 reward breakdown sliders for λ₁, λ₂, live preview) · A18 `data_helpers.py` add `load_trajectory_cached` · A19 `state.py` extend with `gui.data.*` / `gui.env.*` keys · A20 `tests/gui/test_data_pages.py` (`AppTest`: pages render, charts present, no SDK-bypass imports) | `feat(gui): WF-2 data + env surfaces` |
+| **WF-3** | **Training pages (LSTM / REINFORCE / A2C)** | A21 `pages/06_train_lstm.py` (§7.3 — start button, live loss curve via `st.empty()`) · A22 `pages/07_train_reinforce.py` (§7.4 — episode reward stream, baseline toggle) · A23 `pages/08_train_a2c.py` (§7.5 — actor/critic loss + reward stream, entropy-coef slider) · A24 `callbacks.py` add `LSTMEpochObserver` · A25 `callbacks.py` add `EpisodeRewardObserver` (REINFORCE + A2C shared) · A26 `components.py` add `live_metric_card` widget · A27 `charts.py` add `running_mean_overlay` factory · A28 checkpoint browser widget in `components.py` (save / load via SDK) · A29 `data_helpers.py` add `cached_reward_history` · A30 `tests/gui/test_training_pages.py` (`AppTest`: kicking off 2-episode smoke run via SDK, observer fires, chart updates) | `feat(gui): WF-3 training pages w/ live charts` |
+| **WF-4** | **Inference, comparison & recommend** | A31 `pages/09_recommend.py` (state-builder form → `SDK.recommend` → top-k action card w/ masking explanation) · A32 `pages/10_compare.py` (REINFORCE-vs-A2C reward curves side-by-side, §7.6 discussion blurb from `explanations.py`) · A33 `pages/11_ablation.py` (entropy-coef sweep launcher → table of seeds × configs) · A34 `pages/12_explain.py` (LaTeX walk-through of eq. 2/15/16/17 from `explanations.py`) · A35 `components.py` add `action_probability_chart` (plotly bar, masked actions greyed) · A36 `components.py` add `seed_variance_band` (mean ± std overlay) · A37 `data_helpers.py` add `cached_compare_runs` · A38 `state.py` extend with `gui.compare.*` / `gui.recommend.*` keys · A39 dark-mode parity pass (every chart tested in both themes) · A40 `tests/gui/test_inference_pages.py` (`AppTest`: recommend returns 7-vector, masked positions probability 0, compare page renders both curves) | `feat(gui): WF-4 inference + compare + ablation` |
+| **WF-5** | **Polish, accessibility, ship gates** | A41 sidebar polish (logo, version, branch, config snapshot) · A42 error-boundary wrapper in `components.py` (graceful `SDK` exception → toast) · A43 empty-state messaging on every page (pre-training checkpoint absent → guidance card) · A44 keyboard-shortcut hints + ARIA roles audit · A45 mobile/narrow-viewport pass (responsive columns) · A46 `tests/gui/test_a11y_smoke.py` (alt-text on charts, headings hierarchical, color-contrast WCAG-AA on Bar-Ilan palette) · A47 `tests/gui/test_sdk_boundary.py` (ruff/import-linter rule: zero `from src.workoutrl.env|model|services` imports anywhere under `src/workoutrl/gui/`) · A48 `tests/gui/test_state_namespacing.py` (every `st.session_state[…]` key matches `gui.<page>.<key>`) · A49 `docs/PRD_gui.md` + `docs/adr/ADR-005-gui-streamlit.md` (record Streamlit-over-Tk decision, link to this §) · A50 final pre-submission gates: `uv run ruff check`, `uv run pytest --cov=src` ≥ 85 %, screenshot pass committed to `docs/assets/gui/` | `feat(gui): WF-5 polish + a11y + ship gates` |
+
+**Why 5 × 10 (and not 1 × 50 or 50 × 1).** Five workflows map 1-to-1
+onto the five natural seams of a Streamlit RL app (foundation, data,
+training, inference, polish). Inside each workflow the ten agents are
+sized so each one is a single ≤150-LOC focused diff the human can
+sign off in one read — which is the CLAUDE.md §1.4 architect-implementer
+boundary in practice. Each workflow ends in **one** TDD commit so the
+git history reads as five meaningful steps, not fifty noise commits;
+the per-agent spec lives in `docs/PROMPTS.md` (the literal prompt log)
+so the per-agent trail is still auditable from the commit message.
+
+**Definition of Done for §11 (Phase 9).**
+- All five workflows committed with the messages above on `assignment-3`.
+- `tests/gui/` green under `uv run pytest`; total coverage ≥ 85 % (CLAUDE.md §2).
+- `uv run ruff check src/workoutrl/gui/ tests/gui/` zero violations.
+- Every file in `src/workoutrl/gui/` ≤ 150 LOC.
+- `tests/gui/test_sdk_boundary.py` proves zero direct env/model/services imports.
+- `docs/PROMPTS.md` records the literal prompt used for each of A1–A50.
+- `docs/adr/ADR-005-gui-streamlit.md` documents the Streamlit-over-Tkinter decision and references this §11.
+- A screenshot per page committed under `docs/assets/gui/` for the README gallery.

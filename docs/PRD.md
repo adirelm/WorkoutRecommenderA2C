@@ -46,7 +46,7 @@ endpoint (brief §7.7).
 - REINFORCE + A2C trained against the LSTM rollout.
 - Action masking via masked softmax (logits → −∞), per ADR-004.
 - LaTeX-annotated analysis notebook (brief §7.7 deliverables).
-- Public SDK + thin CLI; no GUI required for A3.
+- Public SDK + thin CLI; **plus a beautiful Streamlit GUI surface (Phase 9, ADR-006) covering all 6 SDK verbs + Theory & Discussion pages**.
 
 ### 1.4 Out of scope
 - Live heart-rate / wearables / sensor integration (see §11).
@@ -185,6 +185,59 @@ introduce log-zero singularities when a muscle share is zero, which is the
 modal value in early episodes. λ_2 = 1.0 makes the imbalance term a soft
 nudge rather than a constraint — the policy is allowed to specialise
 within a week, only paying when the 14-day window stays lopsided.
+
+### 1.8 GUI Surface (Phase 9 — Streamlit)
+
+Per the brief §1.4 architect decision recorded in
+[ADR-006](adr/ADR-006-streamlit-gui-surface.md), Assignment 3 ships a
+**Streamlit GUI** on top of the existing `TrainingSDK` facade. The GUI is
+**purely a consumer** of `src.sdk.sdk` (CLAUDE.md §3) — every page imports
+SDK verbs only; no direct `src.env` / `src.model` / `src.services` reach-in.
+This keeps the §5 hybrid architecture intact: the runtime layered core
+(`data/env/model/services/sdk/cli`) stays gradeable, ruff-clean,
+coverage-gated, and 150-LOC-bounded; the GUI is one more *surface* on the
+same SDK, sibling to the analysis notebook.
+
+**Ten pages** (each a separate file under `src/gui/pages/`, ≤ 150 LOC):
+
+1. **Home** — project overview, brief §7 alignment, navigation hub.
+2. **Data** — invokes `prepare_data()`, shows the 28-day logbook, cleaning
+   report, and the §1.5.0 Data Quality Contract verification badges.
+3. **LSTM** — `train_world_model()` with **live per-epoch loss curves**
+   (Plotly, refreshed via `st.empty()` + a `src/gui/callbacks.py` observer).
+4. **REINFORCE** — `train_reinforce()` with **live per-episode reward** +
+   baseline trace.
+5. **A2C** — `train_a2c()` with live actor/critic loss + entropy + advantage.
+6. **Compare** — `compare()` REINFORCE-vs-A2C plot (mean ± 1σ over N seeds).
+7. **Recommend** — interactive `recommend()` endpoint with **12 state
+   sliders** (one per state dim from §1.5); shows the chosen action,
+   per-action probability vector (length 7), predicted next state, and
+   expected reward.
+8. **ActionMasking** — visualises `action_mask(state, history)` (ADR-004):
+   which of the 7 actions are masked, *why* (the violated safety rule),
+   and the resulting masked-softmax distribution.
+9. **Theory** — brief §7.6 / §7.6.1 derivations (policy gradient,
+   advantage estimator, masked-softmax unbiasedness) **rendered with
+   KaTeX-rendered LaTeX** via `st.latex(...)`, sourced from
+   `docs/THEORY.md` so the equations stay single-source-of-truth.
+10. **Discussion** — brief §7.6 honest-limitations narrative (§11 of this
+    PRD), the REINFORCE-vs-A2C reading, and the ablation summary.
+
+**Theme.** Bar-Ilan blue palette (primary `#003D7A`, accent `#FFCD00`,
+light bg `#F5F7FA`); dark mode via Streamlit's built-in toggle.
+`streamlit-extras` for optional polish; Plotly ≥ 5.20 for interactive
+charts; matplotlib charts (when used) go through `src/gui/charts.py`
+factories — never inline `plt` calls.
+
+**Live updates.** Trainer code is **not modified** for the GUI — the
+per-epoch / per-episode refresh uses the observer pattern via
+`src/gui/callbacks.py` + Streamlit's `st.empty()` placeholders. Session
+state keys are namespaced `gui.<page>.<key>` and accessed through the
+typed `src/gui/state.py` helper.
+
+**Testing.** All pages tested headlessly with `streamlit.testing.v1.AppTest`
+(Streamlit ≥ 1.40) — same `≥ 85 %` coverage gate (N2) and `≤ 150 LOC`
+ceiling (N1) as the rest of the runtime code.
 
 ---
 

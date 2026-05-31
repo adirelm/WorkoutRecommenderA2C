@@ -1,0 +1,21 @@
+flowchart TD
+    User[User / Grader] --> Home[01 Home]
+    Home --> Data[02 Data ingestion]
+    Data --> LSTM[03 LSTM]
+    LSTM --> REINFORCE[04 REINFORCE]
+    LSTM --> A2C[05 A2C]
+    REINFORCE --> Compare[06 Compare]
+    A2C --> Compare
+    REINFORCE --> Recommend[07 Recommend]
+    A2C --> Recommend
+    Recommend --> ActionMasking[08 Action Masking]
+    Home --> Theory[09 Theory]
+    Compare --> Discussion[10 Discussion]
+    Recommend --> Discussion
+    ActionMasking --> Discussion
+
+    SDK[(WorkoutSDK)] -.-> Data
+    SDK -.-> REINFORCE
+    SDK -.-> A2C
+    SDK -.-> Compare
+    SDK -.-> Recommend

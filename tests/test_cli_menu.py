@@ -35,11 +35,14 @@ def test_render_main_menu_lists_all_verbs(sdk, stdout):
         "train-a2c",
         "compare",
         "recommend",
+        "launch-gui",
     ):
         assert verb in rendered, f"verb {verb!r} missing from menu"
     # plus the exit option
     assert "0." in rendered
     assert "exit" in rendered
+    assert "7." in rendered
+    assert "Streamlit dashboard (Phase 9)" in rendered
 
 
 def test_handle_choice_zero_exits(sdk, stdout):
@@ -119,3 +122,34 @@ def test_runtime_error_caught_gracefully(stdout):
     assert "[error]" in stdout.getvalue()
     assert "RuntimeError" in stdout.getvalue()
     assert "CUDA OOM" in stdout.getvalue()
+
+
+def test_launch_gui_verb_invokes_streamlit(sdk, stdout):
+    menu = _menu(sdk, "", stdout)
+    with patch("src.cli.menu.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        keep_going = menu.handle_choice("7")
+        assert keep_going is True
+        mock_run.assert_called_once_with(
+            [
+                "uv",
+                "run",
+                "streamlit",
+                "run",
+                "src/gui/app.py",
+                "--server.headless",
+                "false",
+            ],
+            check=False,
+        )
+    out = stdout.getvalue()
+    assert "launch-gui" in out
+    assert "streamlit exited" in out
+
+
+def test_launch_gui_continues_loop_after_streamlit_exits(sdk, stdout):
+    """After streamlit exits, the CLI loop must keep going (returns True)."""
+    menu = _menu(sdk, "", stdout)
+    with patch("src.cli.menu.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        assert menu.handle_choice("7") is True

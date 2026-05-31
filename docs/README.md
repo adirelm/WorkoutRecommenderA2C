@@ -27,3 +27,8 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 - [adrl-001-ex03.pdf](../adrl-001-ex03.pdf) — moodle cover sheet (gitignored — contains PII).
 - [../README.md](../README.md) — top-level README with Quick Start.
 - [../notebooks/analysis.ipynb](../notebooks/analysis.ipynb) — §7.7 chart deliverables + LaTeX + §7.6 discussion.
+
+## GUI
+- [adr/ADR-006-streamlit-gui.md](adr/ADR-006-streamlit-gui.md) — Architecture Decision Record for the Streamlit GUI layer.
+- [../src/gui/pages/README.md](../src/gui/pages/README.md) — page-by-page walkthrough of the multi-page Streamlit app.
+- [assets/](assets/) — `gui_*.png` screenshots captured from the running app for the submission write-up.

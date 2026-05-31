@@ -15,6 +15,8 @@ dependencies = [
     "scipy>=1.13",            # for JS-divergence helpers
     "pyyaml>=6.0",            # config loader
     "kaggle>=1.6",            # dataset download
+    "streamlit>=1.40",        # GUI framework (Phase 9)
+    "plotly>=5.20",           # interactive charts in GUI
 ]
 
 [dependency-groups]
@@ -25,6 +27,9 @@ dev = [
     "pre-commit>=3.7",
     "ipykernel>=6.29",         # for the analysis notebook
     "nbclient>=0.10",          # for CI-side notebook execution
+    "streamlit-extras>=0.4",   # optional polish utilities for the GUI
+    "playwright>=1.40",        # for scripts/capture_gui_screenshots.py
+    "nbconvert>=7.17.1",
 ]
 
 [tool.ruff]
@@ -36,7 +41,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "PL", "RUF"]
 ignore = ["E501"]    # line-length is handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["PLR2004"]   # magic numbers in test asserts are fine
+"tests/*" = ["PLR2004", "RUF002"]   # magic numbers + unicode in test docstrings are fine
 # program_filter accepts many domain-driven config knobs (primary, fallbacks, min_weeks,
 # equipment, min_minutes, max_minutes) — refactoring into a dataclass deferred to keep
 # the public API straightforward for the SDK layer.
@@ -44,6 +49,16 @@ ignore = ["E501"]    # line-length is handled by formatter
 # torch.nn.functional as F is the universal PyTorch convention.
 "src/model/policy_net.py" = ["N812"]
 "src/model/actor_critic.py" = ["N812"]
+# Streamlit page filenames must start with a digit (NN_name.py) for sidebar ordering —
+# N999 (invalid module name) is by design here. Hebrew / Unicode math glyphs in
+# user-facing strings are intentional (bilingual UX).
+"src/gui/pages/*" = ["N999", "RUF001", "RUF002", "PLC0415", "B905"]
+# Screenshot helper does Playwright import lazily so the script remains importable
+# in environments without Playwright. Unicode × in the docstring is intentional.
+"scripts/capture_gui_screenshots.py" = ["PLC0415", "PLR2004", "RUF002"]
+# Streamlit GUI helpers: zip(strict=) noise on st.columns iteration is not worth the churn.
+"src/gui/components.py" = ["B905"]
+"src/gui/state.py" = ["SIM118"]  # st.session_state.keys() is the documented Streamlit API
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from typing import TextIO
 
@@ -15,7 +16,18 @@ _VERBS: tuple[tuple[str, str, str], ...] = (
     ("4", "train-a2c", "Train A2C agent"),
     ("5", "compare", "REINFORCE-vs-A2C side-by-side over N seeds"),
     ("6", "recommend", "Show next-day recommendation for current state"),
+    ("7", "launch-gui", "open Streamlit dashboard (Phase 9)"),
     ("0", "exit", "Quit the menu"),
+)
+
+_STREAMLIT_CMD: tuple[str, ...] = (
+    "uv",
+    "run",
+    "streamlit",
+    "run",
+    "src/gui/app.py",
+    "--server.headless",
+    "false",
 )
 
 
@@ -33,14 +45,14 @@ class CLIMenu:
         self.stdout = stdout if stdout is not None else sys.stdout
 
     def render_main_menu(self) -> str:
-        """Render the 7-line numbered menu (6 verbs + exit) as a string."""
+        """Render the numbered menu (7 verbs + exit) as a string."""
         lines = ["", "=== WorkoutRecommenderA2C — Main Menu ==="]
         for key, verb, desc in _VERBS:
             lines.append(f"  {key}. {verb:<20s} — {desc}")
         lines.append("Select an option: ")
         return "\n".join(lines)
 
-    def _dispatch(self, choice: str) -> str:
+    def _dispatch(self, choice: str) -> str:  # noqa: PLR0911 — flat verb switch is clearer than a table
         if choice == "1":
             handle = self.sdk.prepare_data()
             return f"[ok] prepare-data → {handle}"
@@ -67,6 +79,9 @@ class CLIMenu:
         if choice == "6":
             rec = self.sdk.recommend(State.initial())
             return f"[ok] recommend → {rec.action_name} (id={rec.action_id}) probs={rec.probs}"
+        if choice == "7":
+            subprocess.run(list(_STREAMLIT_CMD), check=False)
+            return "[ok] launch-gui → streamlit exited"
         raise ValueError(f"Unknown choice: {choice!r}")
 
     def handle_choice(self, choice: str) -> bool:

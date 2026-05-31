@@ -350,6 +350,80 @@ violation and must be flagged in the per-assignment
 - **Human review**: this entry itself is the architect's review
   note — accepting the v1.0.0 surface as the submission cut.
 
+### Pass 17 — Phase 9: Streamlit GUI (5 workflows × 10 agents)
+
+- **Architect intent**: extend the v1.0.0 submission surface with a
+  graphical front-end so a grader (or any non-CLI user) can drive
+  the full SDK — dataset ingest, environment preview, world-model
+  pretrain, REINFORCE/A2C training with **live** reward/loss
+  charts, recommendation, action-masking demonstration, and the
+  comparison artefacts from Phase 7 — without ever touching the
+  shell. This is an **architecture pivot** away from PRD §1.3's
+  original "no GUI; CLI + notebook only" stance; the pivot is
+  recorded as **ADR-006** so the §1.4 trail shows the architect
+  signed the new boundary *before* the AI generated any GUI code.
+  Streamlit was selected over Gradio/Flask because it gives
+  page-based navigation, native chart widgets, and a session-state
+  primitive that maps cleanly onto our SDK's stateful objects —
+  with zero new business logic permitted to land outside the SDK.
+- **AI workflows used** — five sequential sub-workflows, each
+  fanned out to **10 parallel agents** (50 agents total). The
+  per-workflow split mirrors the layering of the GUI rather than
+  collapsing the work into one mega-workflow, so each sub-workflow
+  can be independently validated and reverted:
+  - **p9-w1 `a3-phase9-gui-scaffold`** — Streamlit app skeleton,
+    page router, Bar-Ilan theme (`#003D7A` primary navy +
+    `#FFCD00` accent yellow + Inter typography), sidebar nav,
+    `st.session_state` wiring for SDK singletons, base layout
+    primitives, and the `pages/` directory convention. **No SDK
+    methods called yet** — this workflow only stands up the shell.
+  - **p9-w2 `a3-phase9-gui-data-env`** — wires pages 1-3 of the
+    GUI (Dataset / Preprocess / Environment Preview) to the
+    existing `WorkoutSDK` data + env methods. Read-only against
+    the SDK; no new public API surface introduced. Includes a
+    `download_dataset` long-running-task indicator that streams
+    the KaggleClient progress through `st.status`.
+  - **p9-w3 `a3-phase9-gui-training`** — pages 4-6 (World-Model
+    Pretrain / REINFORCE / A2C). The non-trivial design choice
+    here is **live charts during training**: implemented via an
+    observer-pattern callback registered on each Trainer (a new
+    `Trainer.on_epoch_end(callback)` hook that fires per-epoch
+    metrics) with **zero modifications to trainer business logic**.
+    The callback simply updates a `st.line_chart` placeholder
+    bound to a deque of recent metrics. Trainers remain unaware
+    they're being observed by a GUI vs by a notebook vs by a
+    CLI; this preserves the §1.4 boundary that the SDK is the
+    single entry point.
+  - **p9-w4 `a3-phase9-gui-inference-mask-compare`** — pages 7-9
+    (Recommend / Action-Masking Demo / Comparison). The
+    Action-Masking page is added as the **10th page** beyond the
+    brief's minimum surface — it visualises which actions are
+    masked from the current state and *why* (consecutive-action
+    rule per THEORY §3.4), serving as an interactive companion
+    to the static THEORY explanation. The Comparison page reuses
+    the Phase-7 notebook's chart-generation functions — *not*
+    reimplements them — so the comparison surface stays
+    single-source.
+  - **p9-w5 `a3-phase9-gui-cli-launch-and-validate`** — adds CLI
+    verb **7 `launch-gui`** which shells out via
+    `subprocess.run(["streamlit", "run", "gui/app.py", ...])`
+    so the GUI can be reached either by `uv run streamlit ...`
+    directly or by `uv run main.py` → menu → 7. Includes a
+    consolidated GUI validation pass (smoke nav, page render,
+    state persistence across pages, callback wiring, theme
+    compliance, and a 150-LOC-per-file audit over the new
+    `gui/` tree).
+- **Human review**: the GUI surface, the ADR-006 pivot, the
+  observer-pattern callback design, the Bar-Ilan brand palette
+  choice, and the **10th-page bonus** (Action-Masking Demo) are
+  all architect-signed and recorded in the decision log below
+  before the AI was permitted to generate code against them.
+  Specifically rejected during this pass: an AI suggestion to
+  inline a "small" reward-shaping helper directly into the GUI
+  training page "to avoid an SDK round-trip" — that would have
+  smuggled business logic into the presentation layer in
+  violation of CLAUDE.md §3, and was sent back for SDK promotion.
+
 ## §4. Decision log
 
 A flat chronological list of architect-approved decisions. Every
@@ -396,6 +470,46 @@ be implicitly changed by an AI pass.
   methods may be redefined or shadowed inside `analysis.ipynb`
   (per PRD §4 N7). Any "convenience helper" the AI wants to
   inline into a cell must be promoted to the SDK first.
+- 2026-05-31 — **Pivot from PRD §1.3 "no GUI" to a Streamlit-based
+  GUI** (ADR-006). The original PRD locked the deliverable to
+  "CLI + notebook only" to keep the surface auditable; the pivot
+  is accepted because Streamlit gives a single-file Python entry
+  that imports `WorkoutSDK` directly — no JS toolchain, no second
+  language, no cross-process protocol — so the §1.4 SDK-as-single-
+  entry-point invariant survives intact. ADR-006 records the
+  pivot, the considered alternatives (Gradio, Flask+Jinja, no GUI),
+  and the explicit rule that **no business logic may live in
+  `gui/`** (same constraint as for the notebook in PRD §4 N7).
+- 2026-05-31 — **Bar-Ilan blue theme**: primary `#003D7A` (Bar-Ilan
+  navy) + accent `#FFCD00` (Bar-Ilan yellow) + Inter typography,
+  applied via `.streamlit/config.toml`. Chosen over Streamlit's
+  default palette so the submission visually self-identifies as a
+  Bar-Ilan deliverable when a grader screenshots it.
+- 2026-05-31 — **Live training charts via observer-pattern
+  callbacks**, not via trainer surgery. A new
+  `Trainer.on_epoch_end(callback)` hook is added; the GUI
+  subscribes a `st.line_chart`-updating closure to it. The
+  trainers' optimization step, advantage computation, gradient
+  clipping, and seeding are **untouched** by this pass — a
+  callback-only contract preserves the §1.4 boundary that the
+  Phase-5 A2C math is frozen at v1.0.0 and cannot be perturbed by
+  a presentation-layer change.
+- 2026-05-31 — **Action-Masking Demo as the 10th page** (beyond
+  the brief's minimum surface). The brief did not require a GUI
+  at all, let alone a dedicated masking visualisation; the page
+  is included as an interactive companion to THEORY §3.4 because
+  the lecture (timestamp 01:14:33) framed masking as a non-obvious
+  invariant worth surfacing. Architect-approved as a scope
+  *extension*, not a substitution — every brief-mandated artefact
+  remains in place.
+- 2026-05-31 — **CLI verb 7 `launch-gui`** added to `main.py`'s
+  menu, implemented as `subprocess.run(["streamlit", "run",
+  "gui/app.py", "--server.headless", "true"])`. The verb keeps
+  CLI-first users on a single entry point (`uv run main.py`)
+  while still letting Streamlit own its own process — no
+  in-process embedding, no asyncio interleaving, no shared
+  signal handlers. Failure modes (missing streamlit binary,
+  port-in-use) surface as captured stderr in the CLI menu.
 
 ## §5. Workflow registry
 
@@ -429,4 +543,9 @@ produced a given artefact.
 | `a3-phase6-sdk-cli` | 6 build | 6 | ~195k | FAIL; 6 P0s fixed before sign-off |
 | `v1p6-consolidated` | 6 validate | 9 | ~250k | FAIL → GREEN after P0 sweep |
 | `a3-phase7-notebook` | 7 build | 4 | ~175k | green; notebook is SDK-consumer only |
-| `a3-phase8-submission-prep` (THIS) | 8 polish | 5 | (in flight) | (this commit) |
+| `a3-phase8-submission-prep` | 8 polish | 5 | ~190k | v1.0.0 tagged |
+| `p9-w1` `a3-phase9-gui-scaffold` | 9 build | 10 | ~220k | green; Streamlit shell + Bar-Ilan theme + page router |
+| `p9-w2` `a3-phase9-gui-data-env` | 9 build | 10 | ~240k | green; pages 1-3 (Dataset / Preprocess / Env Preview) wired SDK-only |
+| `p9-w3` `a3-phase9-gui-training` | 9 build | 10 | ~285k | green; pages 4-6 + `Trainer.on_epoch_end` observer hook |
+| `p9-w4` `a3-phase9-gui-inference-mask-compare` | 9 build | 10 | ~260k | green; pages 7-9 + 10th-page Action-Masking Demo |
+| `p9-w5` `a3-phase9-gui-cli-launch-and-validate` (THIS) | 9 build+validate | 10 | (in flight) | CLI verb 7 `launch-gui` + consolidated GUI validation |

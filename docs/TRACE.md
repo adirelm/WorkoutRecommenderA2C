@@ -25,7 +25,7 @@ satisfied, the test id planned to enforce it, and a priority of MUST / SHOULD /
 NICE. The action space throughout this trace is the 7-action discrete set
 `{0:Rest, 1:Push, 2:Pull, 3:Legs, 4:FullBody, 5:Conditioning, 6:Mobility}`
 fixed by ADR-002 and ADR-004; any deliverable that mentions an "action count"
-refers to this 7-action set. The matrix below carries 71 rows across eight
+refers to this 7-action set. The matrix below carries 78 rows across eight
 source streams (Brief §1–§3, Brief §7.2 dataset, Brief §7.6 analysis Q1–Q5
 plus §7.6.1 action-masking, Brief §7.7 deliverable artefacts, transcript
 grading hints TR1–TR10, A1 lecturer-feedback avoid/repeat A1A1–A1A8 / A1R1–A1R3,
@@ -176,3 +176,14 @@ Phase 5 placed Actor-Critic under `src/model/actor_critic.py` and A2C trainer/he
 ## Phase-6 freshness sweep (2026-05-31)
 
 Phase 6 placed the SDK facade at `src/sdk/sdk.py` (class `WorkoutSDK`, not `TrainingSDK` as planning text used). Updated rows: F15, F16, F17. F16 entry-point invariant test moved from planned `tests/test_architecture.py` to as-built `tests/test_sdk_facade.py`. F17 CLI verb test moved from `tests/test_cli.py` to `tests/test_cli_menu.py`. CLI is a numeric stdin menu (not argparse), so "verbs" are routed by integer choice; one test asserts all six verbs dispatch to the SDK.
+
+## Phase-9 freshness sweep (2026-05-31)
+
+Phase 9 added a Streamlit GUI surface (10 pages under src/gui/). New TRACE rows:
+| G1 | Architect pivot from PRD §1.3 "no GUI" | docs/adr/ADR-006-streamlit-gui-framework.md | n/a (architect decision) | MUST |
+| G2 | 10 GUI pages bound to brief §7.x and SDK verbs | src/gui/pages/*.py | tests/test_gui_pages_*.py | MUST |
+| G3 | Bar-Ilan blue theme | src/gui/theme.py | tests/test_gui_accessibility.py (WCAG AA contrast) | SHOULD |
+| G4 | Live training charts via observer callbacks | src/gui/callbacks.py | tests/test_gui_callbacks.py | MUST |
+| G5 | Action Masking demo (bonus beyond brief minimum) | src/gui/pages/08_action_masking.py | tests/test_gui_page_action_masking.py | NICE |
+| G6 | CLI verb 7 launch-gui | src/cli/menu.py | tests/test_cli_menu.py | MUST |
+| G7 | Screenshot capture | scripts/capture_gui_screenshots.py + docs/assets/gui_*.png | tests/test_gui_screenshots_exist.py | NICE |

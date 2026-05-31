@@ -126,6 +126,49 @@ The full C4-style mermaid diagram lives in [PLAN.md](docs/PLAN.md) §3
 
 ---
 
+## Visual tour
+
+The Streamlit GUI (Phase 9, ADR-006) covers all 6 SDK verbs plus Theory & Discussion. Launch with `uv run main.py` → verb 7 OR directly: `uv run streamlit run src/gui/app.py`.
+
+### Pages
+
+| Icon | Page | What it shows |
+|---|---|---|
+| 🏠 | Home | Brief §7.7 deliverable checklist + CI badge + quick-start |
+| 📊 | Data | sdk.prepare_data() + 28-day muscle-distribution heatmap |
+| 🧠 | LSTM World Model | LSTMTrainer with live per-epoch loss curve + hyperparameter sliders |
+| 🎯 | REINFORCE | sdk.train_reinforce with live reward curve |
+| ⚡ | A2C | sdk.train_a2c with live 3-panel actor/critic/reward chart |
+| ⚖️ | Compare | sdk.compare REINFORCE-vs-A2C mean±std band |
+| 💡 | Recommend | sdk.recommend with 12 state sliders + probability bar + reward decomposition |
+| 🛡️ | Action Masking | Brief §7.6.1 demo: unmasked vs masked softmax side-by-side + Huang & Ontañón 2022 |
+| 📐 | Theory | docs/THEORY.md rendered with KaTeX equations + src/ cross-links |
+| 💬 | Discussion | Brief §7.6 Q1-Q5 + §7.6.1 writeup; embeds session-state comparison chart |
+
+### Screenshots
+
+![Home page](docs/assets/gui_home.png)
+
+![Data page](docs/assets/gui_data.png)
+
+![LSTM World Model page](docs/assets/gui_lstm.png)
+
+![REINFORCE page](docs/assets/gui_reinforce.png)
+
+![A2C page](docs/assets/gui_a2c.png)
+
+![Compare page](docs/assets/gui_compare.png)
+
+![Recommend page](docs/assets/gui_recommend.png)
+
+![Action Masking page](docs/assets/gui_action_masking.png)
+
+![Theory page](docs/assets/gui_theory.png)
+
+![Discussion page](docs/assets/gui_discussion.png)
+
+---
+
 ## Algorithms
 
 ### LSTM World Model (THEORY §7.3, eq. 14)
