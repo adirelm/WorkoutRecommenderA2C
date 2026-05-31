@@ -30,6 +30,7 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 
 ## 6 — Quality + Submission
 - [QUALITY.md](QUALITY.md) — ISO/IEC 25010:2011 product-quality characteristics mapped to repo evidence (V3 §13).
+- [SUBMISSION.md](SUBMISSION.md) — V3 §17.1–§17.6 grader-facing evidence table (bound by TRACE row R2).
 - [adrl-001-ex03.pdf](../adrl-001-ex03.pdf) — moodle cover sheet (gitignored — contains PII).
 - [../README.md](../README.md) — top-level README with Quick Start.
 - [../notebooks/analysis.ipynb](../notebooks/analysis.ipynb) — §7.7 chart deliverables + LaTeX + §7.6 discussion.
