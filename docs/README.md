@@ -9,7 +9,8 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 
 ## 2 — Architect the solution
 - [PLAN.md](PLAN.md) — Architecture, C4-Container mermaid diagram, 10-phase build sequence, ADR pointers.
-- [adr/](adr/) — 5 Architecture Decision Records (hybrid SDK + analysis-notebook, state, reward, action masking, terminal conditions).
+- [adr/](adr/) — 7 Architecture Decision Records (hybrid SDK + analysis-notebook, state, reward, action masking, terminal conditions, Streamlit GUI, and ADR-007 documenting the NA path for the V3 §5 ApiGatekeeper requirement).
+- [adr/ADR-007-no-api-gatekeeper.md](adr/ADR-007-no-api-gatekeeper.md) — V3 §5 NA justification: A3 has no rate-limited inference endpoint and only one one-shot Kaggle CLI invocation.
 
 ## 3 — Theory↔Code contract
 - [THEORY.md](THEORY.md) — Brief's 12 equations transcribed verbatim in LaTeX, each cross-linked to the src/ file that implements it.
@@ -23,12 +24,14 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 - [COST_ANALYSIS.md](COST_ANALYSIS.md) — Token-spend table across all phases + per-deliverable amortisation.
 - [EXPERIMENTS.md](EXPERIMENTS.md) — Hypothesis-setup-result-verdict log for §7.6 discussion + DA4 comparison.
 
-## 6 — Submission
+## 6 — Quality + Submission
+- [QUALITY.md](QUALITY.md) — ISO/IEC 25010:2011 product-quality characteristics mapped to repo evidence (V3 §13).
 - [adrl-001-ex03.pdf](../adrl-001-ex03.pdf) — moodle cover sheet (gitignored — contains PII).
 - [../README.md](../README.md) — top-level README with Quick Start.
 - [../notebooks/analysis.ipynb](../notebooks/analysis.ipynb) — §7.7 chart deliverables + LaTeX + §7.6 discussion.
 
 ## GUI
-- [adr/ADR-006-streamlit-gui.md](adr/ADR-006-streamlit-gui.md) — Architecture Decision Record for the Streamlit GUI layer.
+- [adr/ADR-006-streamlit-gui-framework.md](adr/ADR-006-streamlit-gui-framework.md) — Architecture Decision Record for the Streamlit GUI layer.
 - [../src/gui/pages/README.md](../src/gui/pages/README.md) — page-by-page walkthrough of the multi-page Streamlit app.
+- [UX.md](UX.md) — Nielsen's 10 usability heuristics + 5 quality criteria mapped to GUI pages and `assets/gui_*.png` screenshots (V3 §10).
 - [assets/](assets/) — `gui_*.png` screenshots captured from the running app for the submission write-up.

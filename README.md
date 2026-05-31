@@ -11,7 +11,7 @@ sign-off; the AI writes the code against the approved spec.
 
 ---
 
-## Quick Start
+## Installation & Quick Start
 
 ```bash
 uv sync --dev
@@ -34,6 +34,38 @@ without re-running training.
 
 ---
 
+## Usage
+
+Three entry points cover every supported workflow:
+
+1. **Interactive CLI menu** — `uv run main.py` opens the verb picker (data, LSTM,
+   REINFORCE, A2C, compare, recommend, GUI).
+2. **Streamlit GUI** — `uv run main.py` then choose option 7, or jump straight in
+   with `uv run streamlit run src/gui/app.py` (ADR-006).
+3. **Jupyter notebook** — `uv run jupyter notebook notebooks/analysis.ipynb` for
+   the §7.7 chart deliverables and the LaTeX-rendered discussion cells.
+
+---
+
+## Examples
+
+The primary worked example is
+[notebooks/analysis.ipynb](notebooks/analysis.ipynb) — it runs the full
+prepare-data → train-LSTM → train-REINFORCE → train-A2C → compare pipeline with
+fixed seed 42 and re-creates every figure cited in the report. A pre-executed
+copy is committed at
+[notebooks/analysis_executed.ipynb](notebooks/analysis_executed.ipynb).
+
+Three quick-start CLI invocations for graders who prefer the terminal:
+
+```bash
+uv run main.py                                # interactive verb menu (recommended)
+uv run python -c "from src.sdk import prepare_data; prepare_data()"   # data only
+uv run streamlit run src/gui/app.py           # full GUI (Phase 9)
+```
+
+---
+
 ## Documents
 
 Every artefact below is referenced from `docs/TRACE.md` (R6 traceability) so
@@ -53,6 +85,8 @@ linkable home.
 **Design notes**
 - [State design](docs/STATE_DESIGN.md) — 12-dim moderate state (C2_moderate_12d)
 - [Action design](docs/ACTION_DESIGN.md) — 7-action discrete space
+- [UX](docs/UX.md) — Nielsen's 10 heuristics + 5 quality criteria mapped
+  to GUI pages and screenshots (V3 §10)
 
 **Architecture Decision Records**
 - [ADR-001 — hybrid architecture](docs/adr/ADR-001-hybrid-architecture.md)
@@ -60,6 +94,10 @@ linkable home.
 - [ADR-003 — reward weighting](docs/adr/ADR-003-reward-weighting.md)
 - [ADR-004 — action masking](docs/adr/ADR-004-action-masking.md)
 - [ADR-005 — terminal conditions](docs/adr/ADR-005-terminal-conditions.md)
+
+**Quality**
+- [QUALITY](docs/QUALITY.md) — ISO/IEC 25010:2011 product-quality
+  characteristics mapped to concrete repo evidence (V3 §13).
 
 **Notebook**
 - [analysis.ipynb](notebooks/analysis.ipynb) — §7.7 chart deliverables + LaTeX
@@ -320,6 +358,22 @@ The numbers cited throughout `docs/THEORY.md` map to:
    evolution," NeurIPS 2018.
 8. S. Huang and S. Ontañón, "A closer look at invalid action masking in
    policy gradient algorithms," FLAIRS 2022.
+
+---
+
+## Contributing
+
+Solo academic submission — no external contributors expected. For graders or
+derivative academic work:
+
+1. Clone the repo and run `uv sync --dev` to install dev dependencies.
+2. Before any commit, run `uv run pre-commit run --all-files` (or, equivalently,
+   `uv run ruff check src/ tests/ main.py && uv run pytest tests/`).
+3. Commit subjects must match the allowed-prefix regex enforced in
+   `tests/test_commits_reference_sections.py` (e.g. `Phase N fix —`, `PII scrub —`,
+   `Phase N completion`, `Phase N gate-fix`).
+4. Every commit carries the `Co-Authored-By: Claude Opus 4.7` trailer per the
+   §1.4 Architect / Implementer contract above.
 
 ---
 
