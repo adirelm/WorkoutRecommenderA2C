@@ -10,9 +10,14 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 - Acceptance criteria documented per feature in docs/PRD.md
 
 ## 2. Performance Efficiency (time-behavior, resource-utilization, capacity)
-- LSTM forward pass benchmarked at <X ms/step (single-trainee inference)
+- LSTM forward pass benchmarked at ~0.072 ms/step on developer macOS arm64
+  (single-trainee inference, eval mode, no_grad, 200-iter mean after 20-iter warmup;
+  reproduce via `uv run --active python -c "..."` — see commit message for §17.6 fix)
 - Streamlit GUI uses @st.cache_resource for the heavy SDK instance (src/gui/state.py)
 - A2C training scales linearly in episodes; no quadratic blow-up
+- Parallel processing / thread safety: intentionally out-of-scope (single-process
+  training, no multiprocessing / no torch.distributed). See docs/PLAN.md §6 and
+  ADR-007 for rationale (academic single-GPU/CPU project; complexity > value here).
 - Limitation: no formal perf benchmark suite (single-process academic project)
 
 ## 3. Compatibility (co-existence, interoperability)
