@@ -1,20 +1,24 @@
-"""A2C training loop (brief §7.5)."""
+"""A2C training loop (brief §7.5).
+
+A2C-specific update lives here; shared rollout / sampling / seeding
+belongs to :class:`src.services.base_trainer.BaseTrainer` (V3 §4
+no-duplication, §12 open-closed extension point).
+"""
 
 from __future__ import annotations
 
 import numpy as np
 import torch
 from torch import optim
-from torch.distributions import Categorical
 
 from src.env.workout_env import WorkoutEnv
 from src.model.actor_critic import ActorCriticNet
 from src.services.a2c_helpers import actor_loss, compute_advantages_td, critic_loss
 from src.services.a2c_types import A2CConfig, A2CHistory
-from src.utils.seeding import set_global_seed
+from src.services.base_trainer import BaseTrainer
 
 
-class A2CTrainer:
+class A2CTrainer(BaseTrainer):
     """Synchronous A2C with separate actor + critic Adams."""
 
     def __init__(
@@ -24,20 +28,30 @@ class A2CTrainer:
         config: A2CConfig | None = None,
         seed: int = 42,
     ) -> None:
+        cfg = config or A2CConfig()
+        super().__init__(env=env, config=cfg, seed=seed)
         self.ac_net = ac_net
-        self.env = env
-        self.config = config or A2CConfig()
-        self.seed = int(seed)
-        set_global_seed(self.seed)
         self.actor_optim = optim.Adam(
             [*self.ac_net.actor_fc.parameters(), *self.ac_net.actor_head.parameters()],
-            lr=self.config.actor_lr,
+            lr=cfg.actor_lr,
         )
         self.critic_optim = optim.Adam(
             [*self.ac_net.critic_fc.parameters(), *self.ac_net.critic_head.parameters()],
-            lr=self.config.critic_lr,
+            lr=cfg.critic_lr,
         )
 
+    # ----------------------------------------------------------- forward hook
+    def forward_step(
+        self,
+        state_t: torch.Tensor,
+        mask_t: torch.Tensor,
+    ) -> tuple[int, torch.Tensor, torch.Tensor, torch.Tensor | None]:
+        """A2C forward: actor-critic logits+value → masked Categorical → sample."""
+        logits, value = self.ac_net.forward(state_t)
+        action_id, log_prob, entropy, _dist = self.sample_action(logits, mask_t)
+        return action_id, log_prob, entropy, value
+
+    # ----------------------------------------------------------- legacy rollout
     def run_episode(self) -> tuple[list, list, list, list, list, list, list]:
         """Roll out one episode.
 
@@ -45,32 +59,14 @@ class A2CTrainer:
         Env is re-seeded ONCE in __init__; subsequent resets advance the env RNG
         naturally so each episode samples a fresh trajectory.
         """
-        states: list = []
-        actions: list[int] = []
-        rewards: list[float] = []
-        log_probs: list[torch.Tensor] = []
-        values: list[torch.Tensor] = []
-        dones: list[bool] = []
-        entropies: list[torch.Tensor] = []
-        done = False
-        s = self.env.reset()
-        while not done:
-            state_t = torch.as_tensor(s.to_array(), dtype=torch.float32)
-            mask = torch.as_tensor(self.env.action_mask(), dtype=torch.bool)
-            logits, value = self.ac_net.forward(state_t)
-            masked = self.ac_net._apply_mask(logits, mask)
-            dist = Categorical(logits=masked)
-            action = dist.sample()
-            log_prob = dist.log_prob(action)
-            entropy = dist.entropy()
-            s, r, done, _ = self.env.step(int(action.item()))
-            states.append(state_t)
-            actions.append(int(action.item()))
-            rewards.append(float(r))
-            log_probs.append(log_prob)
-            values.append(value)
-            dones.append(bool(done))
-            entropies.append(entropy)
+        records = self.rollout_episode()
+        states = [r.state_t for r in records]
+        actions = [r.action_id for r in records]
+        rewards = [r.reward for r in records]
+        log_probs = [r.log_prob for r in records]
+        values = [r.value for r in records]
+        dones = [r.done for r in records]
+        entropies = [r.entropy for r in records]
         return states, actions, rewards, log_probs, values, dones, entropies
 
     def train(self, episodes: int | None = None) -> A2CHistory:
@@ -89,7 +85,6 @@ class A2CTrainer:
                 rewards, value_floats, next_values, dones, gamma=self.config.gamma
             )
             targets = [adv + v for adv, v in zip(advantages, value_floats, strict=True)]
-            # entropies: REAL H(pi) from Categorical.entropy() captured per-step in run_episode
             a_loss = actor_loss(
                 log_probs, advantages, entropy_coef=self.config.entropy_coef, entropies=entropies
             )

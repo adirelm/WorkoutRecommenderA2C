@@ -3,9 +3,17 @@
 UIs (CLI menu, notebooks) MUST import only from ``src.sdk``. Business logic
 lives behind this facade: env construction, trainer wiring, policy storage,
 and recommendation are all routed through here.
+
+V3 §12 extension point: ``_TRAINER_REGISTRY`` + :meth:`train` give an
+open-closed seam — add a new on-policy algorithm by subclassing
+:class:`src.services.base_trainer.BaseTrainer` and registering it; no
+edits to this facade are required for the new algo to be reachable via
+``sdk.train("ppo", ...)``.
 """
 
 from __future__ import annotations
+
+from typing import ClassVar
 
 from src.env.state import ACTION_COUNT, ACTION_NAMES, STATE_DIM, State
 from src.env.workout_env import WorkoutEnv
@@ -20,6 +28,7 @@ from src.sdk.types import (
 )
 from src.services.a2c_trainer import A2CTrainer
 from src.services.a2c_types import A2CConfig, A2CHistory
+from src.services.base_trainer import BaseTrainer
 from src.services.comparator import ComparisonResult, compare
 from src.services.reinforce_trainer import REINFORCETrainer
 from src.services.types import REINFORCEConfig, REINFORCEHistory
@@ -27,6 +36,12 @@ from src.services.types import REINFORCEConfig, REINFORCEHistory
 
 class WorkoutSDK:
     """Single business-logic entry point. UIs (CLI/notebook) call only this class."""
+
+    # V3 §12 open-closed registry — new algos plug in here, never inside methods.
+    _TRAINER_REGISTRY: ClassVar[dict[str, type[BaseTrainer]]] = {
+        "reinforce": REINFORCETrainer,
+        "a2c": A2CTrainer,
+    }
 
     def __init__(self, seed: int = 42) -> None:
         self.seed = int(seed)
@@ -49,9 +64,28 @@ class WorkoutSDK:
         raise NotImplementedError("train_world_model is exercised via Phase-3 scripts, not the SDK")
 
     # ------------------------------------------------------------- trainers
+    def train(self, algo: str, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory | A2CHistory]:
+        """Generic registry-driven trainer dispatch (V3 §12 open-closed).
+
+        Looks up ``algo`` in :attr:`_TRAINER_REGISTRY`, builds the right
+        network + config pair, instantiates the trainer, and returns the
+        ``(handle, history)`` tuple the CLI / GUI / tests already consume.
+        """
+        key = algo.lower()
+        if key not in self._TRAINER_REGISTRY:
+            raise ValueError(f"unknown algo {algo!r}; registered: {sorted(self._TRAINER_REGISTRY)}")
+        if key == "reinforce":
+            return self.train_reinforce(episodes=episodes)
+        if key == "a2c":
+            return self.train_a2c(episodes=episodes)
+        # Defensive fallback — registry has a key but this dispatcher doesn't
+        # know how to wire its net/config pair. Adding a new algo should also
+        # extend this elif chain (or a future _build_trainer factory).
+        raise NotImplementedError(f"registry key {key!r} has no wiring in SDK.train")
+
     def train_reinforce(self, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory]:
         """Train REINFORCE policy; returns (handle, per-episode history). Brief §7.4."""
-        env = self._ensure_env()
+        env = self.ensure_env()
         policy = PolicyNet(seed=self.seed)
         cfg = REINFORCEConfig(episodes=int(episodes))
         history = REINFORCETrainer(policy, env, cfg, seed=self.seed).train(episodes=int(episodes))
@@ -62,7 +96,7 @@ class WorkoutSDK:
 
     def train_a2c(self, episodes: int = 10) -> tuple[PolicyHandle, A2CHistory]:
         """Train A2C actor-critic; returns (handle, per-episode history). Brief §7.5."""
-        env = self._ensure_env()
+        env = self.ensure_env()
         ac = ActorCriticNet(seed=self.seed)
         cfg = A2CConfig(episodes=int(episodes))
         history = A2CTrainer(ac, env, cfg, seed=self.seed).train(episodes=int(episodes))
@@ -110,12 +144,18 @@ class WorkoutSDK:
             raise ValueError("Only the most recently trained policy handle is supported.")
         if self._last_net is None or self._last_policy_handle is None:
             raise RuntimeError("No policy trained yet — call train_reinforce or train_a2c first.")
-        env = self._ensure_env()
+        env = self.ensure_env()
         mask = env.action_mask()
         return recommend_from_net(self._last_net, state, mask, ACTION_NAMES, ACTION_COUNT)
 
     # --------------------------------------------------------------- helpers
-    def _ensure_env(self) -> WorkoutEnv:
+    def ensure_env(self) -> WorkoutEnv:
+        """Return the cached WorkoutEnv, building one via prepare_data() if needed.
+
+        Public API (V3 §4 encapsulation fix) — GUI / notebook callers that need
+        direct env access (e.g. for trajectory rollouts) call this instead of
+        reaching into the previously-private ``_ensure_env``.
+        """
         if self._env is None:
             self.prepare_data()
         assert self._env is not None

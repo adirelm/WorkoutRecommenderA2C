@@ -36,7 +36,7 @@ _SECTION_BLURB = (
 def _roll_trajectory(sdk: WorkoutSDK, days: int = 28) -> tuple[list[State], list[dict]]:
     """Roll a masked-uniform rollout, capturing per-step state + reward info."""
     sdk.prepare_data()
-    env = sdk._ensure_env()
+    env = sdk.ensure_env()
     state = env.reset()
     states: list[State] = [state]
     infos: list[dict] = []

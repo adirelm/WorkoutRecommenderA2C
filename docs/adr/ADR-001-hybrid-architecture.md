@@ -96,8 +96,12 @@ re-execute) is enforced by the same pipeline that runs the tests.
 - All seven CLAUDE.md hard constraints (CL1–CL7) remain satisfiable; the
   notebook is excluded from coverage but contains no business logic.
 - The SDK facade gives a grader a single drill-down path and gives a future
-  contributor a single extension point (add a new agent → subclass
-  `BaseAgent`, register in `sdk.train_<name>()`).
+  contributor a single extension point (add a new on-policy algorithm →
+  subclass `src.services.base_trainer.BaseTrainer`, register it in
+  `WorkoutSDK._TRAINER_REGISTRY`, and the generic `sdk.train(algo, ...)`
+  dispatcher routes to it with zero edits to the facade body). Worked
+  example: `class PPOTrainer(BaseTrainer): ...` + `_TRAINER_REGISTRY["ppo"] = PPOTrainer`
+  is the *entire* diff needed to expose a PPO algorithm through the SDK.
 - The §7.6 discussion lives next to the figures it discusses, so the
   understanding-vs-result tension the rubric flags is answered structurally
   rather than rhetorically.

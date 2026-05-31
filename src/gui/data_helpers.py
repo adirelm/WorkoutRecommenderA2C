@@ -28,9 +28,9 @@ def get_initial_trajectory(sdk: WorkoutSDK, days: int = 28) -> list[State]:
     """
     if days <= 0:
         raise ValueError(f"days must be > 0, got {days}")
-    # _ensure_env is private but prepare_data is the documented public entry.
+    # ensure_env is the documented public accessor (V3 §4 encapsulation fix).
     sdk.prepare_data()
-    env = sdk._ensure_env()
+    env = sdk.ensure_env()
     state = env.reset()
     trajectory: list[State] = [state]
     rng = np.random.default_rng(sdk.seed)
