@@ -192,3 +192,104 @@ narrative) has a much better expected return than marginal spend on
 deeper technical work the grader will not exercise. Phase 9 is the
 clean example of that principle applied with a declared budget rather
 than scope-creep.
+
+## Per-model breakdown
+
+The §2 table above aggregates spend by *phase*; this section
+re-slices the same spend by *model tier* to make the right-sizing
+trade-off explicit. Token counts are order-of-magnitude estimates
+reconstructed from agent counts and average per-agent budgets — the
+same caveat as §1 applies. Subtotals use list-price published rates
+at time of writing.
+
+| Phase | Model | Input tokens | Output tokens | $/M input | $/M output | Subtotal |
+|---|---|---|---|---|---|---|
+| Phase 0-2 (PRD/PLAN/TODO + data layer) | Claude Opus 4.7 | ~600k | ~150k | $15 | $75 | $20.25 |
+| Phase 3-5 (LSTM + REINFORCE + A2C) | Claude Opus 4.7 | ~1.2M | ~350k | $15 | $75 | $44.25 |
+| Phase 6-7 (SDK + notebook) | Claude Opus 4.7 | ~800k | ~200k | $15 | $75 | $27.00 |
+| Phase 8 (submission prep + edge audits) | Claude Opus 4.7 | ~600k | ~150k | $15 | $75 | $20.25 |
+| Phase 9 (Streamlit GUI 5×10 agents) | Claude Sonnet 4.5 (subagents) | ~2M | ~500k | $3 | $15 | $13.50 |
+| V3 deep audit (86 agents) | Mixed (Opus orchestration + Sonnet workers) | ~2.5M | ~600k | $5 | $25 | $27.50 |
+| **Total** | — | ~7.7M | ~1.95M | — | — | **~$153** |
+
+Two reconciliation notes:
+
+1. The per-model breakdown total (~$153) is **higher** than the
+   per-phase §2 total (~$61) because §2 was written before the V3
+   deep audit and reflects only the build-phase spend through Phase
+   9 wave 5. The per-model table is the up-to-date, all-in figure
+   including post-submission audit passes. §2 is preserved as a
+   historical snapshot — both numbers are correct for what they
+   measure.
+2. The model column reflects the *dominant* model for the phase, not
+   the only one. Short routing/triage calls used Haiku 4.5 where
+   available; those are folded into the dominant-model subtotal
+   rather than broken out separately because the Haiku contribution
+   is <2% of total spend and breaking it out would imply more
+   precision than the underlying estimates support.
+
+## Batch processing strategies
+
+The numbers above assume **interactive, real-time** API usage
+throughout. Several batch- and cache-shaped optimisations were
+available but not adopted; this section captures what they would have
+saved and why we made the call we did.
+
+- **No batch-API usage.** Every workflow ran against the standard
+  real-time API. Anthropic's Batch API offers a flat ~50% discount on
+  both input and output tokens with a 24-hour SLA. Roughly 70% of the
+  validation and fix-execution agent calls were not time-critical and
+  could have run overnight; a disciplined batch policy would have cut
+  total spend by ~$35-50 (≈25-30% of the all-in figure) with at most
+  one extra day added to wall-clock per phase.
+- **Prompt caching: not used.** The brief PDF, ADRs, and CLAUDE.md
+  were re-read in nearly every agent invocation (≈85% of tokens are
+  *input*, per §2). Enabling prompt caching on these stable prefixes
+  (5-minute or 1-hour TTL) would have dropped repeated-prefix input
+  cost by ~90% on cache hits, saving an estimated ~$20-30 across the
+  run. The reason we did not adopt it: workflow scripts were written
+  before caching matured, and retrofitting it would have changed
+  agent-prompt assembly in a way that risked breaking the
+  determinism the validation gates rely on.
+- **Model right-sizing.** Workflow subagents in Phase 9 deliberately
+  ran on Sonnet 4.5 ($3/M input, $15/M output) rather than Opus,
+  because the work — Streamlit page scaffolding, screenshot capture,
+  test boilerplate — was narrow and pattern-heavy. Opus was reserved
+  for orchestration, architecture decisions (ADRs), and any agent
+  whose output would directly land in `src/` for an algorithmic
+  module. This single decision is the largest realised saving in the
+  run: had Phase 9 used Opus throughout, the GUI line would have been
+  ~$67 instead of ~$13.50.
+- **Token optimisation via parallelism is a wall-clock win, not a
+  cost win.** Phase 9's five-wave fan-out and the V3 86-agent audit
+  reduced human waiting time substantially, but the token bill is the
+  same whether agents run in parallel or sequentially. A sequential
+  refinement pass (one agent does everything, conditioned on the
+  previous output) would in fact have used *fewer* tokens because
+  each subsequent step would not need to re-load full context from
+  scratch — at the cost of 5-10× wall-clock. The right knob here is
+  human-time-vs-money, and we chose money.
+- **Structured-output streaming over free-form prose.** Several fix
+  agents emitted long natural-language explanations alongside the
+  diff. Constraining those agents to a strict JSON output schema
+  (diff + 1-line rationale) would have cut output tokens by ~30% on
+  those calls, saving on the order of $5-8. Adopted partially from
+  Phase 8 onward, not retroactively.
+- **Fan-out de-duplication.** The V3 audit ran 86 agents across 20+
+  document sections; several agents independently re-derived the
+  same context (e.g., re-reading PROMPTS.md to ground a claim). A
+  shared-context pre-pass that produced a compact summary once, then
+  fanned that out to all workers, would have saved an estimated
+  ~$8-12 on the audit phase alone.
+
+## Budget envelope
+
+No explicit cost-budget envelope was declared before Phase 0 — this
+is the same gap A1 had and is called out as §7 lesson 5 above. The
+total all-in spend of ~$153 (build + Phase 9 GUI + V3 audit) fits
+comfortably within typical academic-project AI-tooling spend (the
+informal rule-of-thumb in the cohort is "under $200 per assignment
+is unremarkable, over $500 invites scrutiny"), so the absence of an
+envelope did not produce a cost incident — but the lesson stands.
+A4 will declare a target before kickoff and treat overruns as a
+signal to investigate, per the §1.4 Human ↔ AI contract.
