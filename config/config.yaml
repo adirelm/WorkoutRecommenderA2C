@@ -1,7 +1,7 @@
 # WorkoutRecommenderA2C configuration
 # All algorithm-relevant parameters live here; never hardcoded in src/.
 
-version: "1.0.0"
+version: "1.1.1"
 seed: 42
 
 environment:
