@@ -11,7 +11,7 @@ A short reading guide: §1 frames the objective. §2 derives the vanilla REINFOR
 
 The action space throughout this document is **|A| = 7**:
 `{0: Rest, 1: Push, 2: Pull, 3: Legs, 4: FullBody, 5: Conditioning, 6: Mobility}`.
-This is *not* the brief's "4 to 8" hand-wave — it is a tuning decision (see `docs/adr/ADR-002-action-space.md`) and it must match the policy-head output width in `src/policy/policy_net.py`.
+This is *not* the brief's "4 to 8" hand-wave — it is a tuning decision (see `docs/adr/ADR-002-action-space.md`) and it must match the policy-head output width in `src/model/policy_net.py`.
 
 ---
 
@@ -25,7 +25,7 @@ $$
 
 where $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$ is a trajectory and $\gamma \in [0,1]$ is the discount rate (Discount Rate / מקדם היוון).
 
-**How this maps to `src/`.** `src/training/objective.py` exposes `discounted_return(rewards, gamma)` returning $\sum_t \gamma^t r_t$ for a single rollout, and `expected_return(rollouts, gamma)` returning the Monte-Carlo mean across a batch of rollouts. The trainer never optimises $J$ directly — it optimises a sample-based surrogate (eq. 2 below). $J$ exists in code only as the *metric* we plot on the training curve.
+**How this maps to `src/`.** `src/services/reinforce_helpers.py` exposes `compute_returns(rewards, gamma)` returning $[G_0, \ldots, G_T]$ where $G_0 = \sum_t \gamma^t r_t$ for a single rollout. The Monte-Carlo expected return across a batch of rollouts is then `np.mean([G_0 for each rollout])` and is plotted by `src/services/comparator.py`. The trainer never optimises $J$ directly — it optimises a sample-based surrogate (eq. 2 below). $J$ exists in code only as the *metric* we plot on the training curve.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §3.1 — "objective curve" (placeholder until the notebook is authored).
 
@@ -43,7 +43,7 @@ $$
 
 where $G_t$ is the return-from-step-$t$ accumulator (the brief calls it `Return` at this point and only formalises it as Reward-to-Go later, in eq. 7).
 
-**How this maps to `src/`.** `src/training/reinforce_trainer.py` implements one episode = one update. The forward pass produces logits $z_t$ from the policy net, `torch.distributions.Categorical(logits=z_t).sample()` emits $a_t$, the env returns $r_t$, and at episode end we compute $G_t$ per eq. 7. The loss is the cross-entropy surrogate (§X below); the update direction is mathematically eq. 2.
+**How this maps to `src/`.** `src/services/reinforce_trainer.py` implements one episode = one update. The forward pass produces logits $z_t$ from the policy net (`src/model/policy_net.py`), `torch.distributions.Categorical(logits=z_t).sample()` emits $a_t$, the env returns $r_t$, and at episode end we compute $G_t$ per eq. 7. The loss is the cross-entropy surrogate (§X below); the update direction is mathematically eq. 2.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §4.2 — "REINFORCE training loop" (placeholder).
 
@@ -61,7 +61,7 @@ $$
 
 The brief calls this **משפט גרדיאנט המדיניות** (Policy-Gradient Theorem). The key consequence is "model-free": the gradient estimator does not require the env transition $P(s_{t+1}\mid s_t, a_t)$.
 
-**How this maps to `src/`.** This identity is *not* a line of code — it is the proof that justifies why `loss.backward()` on the cross-entropy surrogate is an unbiased estimate of $\nabla_\theta J$. It is referenced in the docstring of `src/training/reinforce_trainer.py::compute_policy_loss`.
+**How this maps to `src/`.** This identity is *not* a line of code — it is the proof that justifies why `loss.backward()` on the cross-entropy surrogate is an unbiased estimate of $\nabla_\theta J$. It is referenced in the module docstring of `src/services/reinforce_helpers.py::reinforce_loss`.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §2.3 — "log-derivative numerical check" (placeholder).
 
@@ -79,7 +79,7 @@ $$
 
 Brief §3.2: trajectory return averages to 8. A trajectory returning 12 has advantage +4 (above baseline); a trajectory returning 5 has advantage −3 (below baseline). The policy is encouraged to repeat actions from the +4 trajectory and discouraged from those in the −3 trajectory.
 
-**How this maps to `src/`.** `src/training/baseline.py` implements `running_mean_baseline(returns)` and `value_baseline(states, V_psi)`. In REINFORCE we use the running-mean variant. In A2C we use the value-function baseline $b(s) \approx V^\pi(s)$ — which makes $G_t - b$ collapse into the Advantage (eq. 8).
+**How this maps to `src/`.** `src/services/baseline.py::RunningMeanBaseline` implements the EMA running-mean baseline used by REINFORCE; in A2C, the value-function baseline $b(s) \approx V_\psi(s)$ is supplied by the critic head of `src/model/actor_critic.py::ActorCriticNet` — which makes $G_t - b$ collapse into the Advantage (eq. 8) computed by `src/services/a2c_helpers.py::compute_advantages_td`.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §4.4 — "variance with vs without baseline" (placeholder).
 
@@ -97,7 +97,7 @@ $$
 
 Rather than crediting every step with the *total* trajectory return, each step is credited only with rewards that *follow* it. The brief grounds this in **causality**: an action taken at time $t$ cannot retroactively change rewards already collected at $t' < t$ — that contribution has expected value zero in the gradient anyway, but including it inflates variance.
 
-**How this maps to `src/`.** `src/training/credit_assignment.py::reward_to_go(rewards, gamma)` returns $[G_0, G_1, \ldots, G_T]$ in O(T) via a reverse cumulative sum. Used by both REINFORCE and A2C as the target for the policy update; in A2C it is also the regression target for the critic when using Monte-Carlo returns instead of bootstrapped TD.
+**How this maps to `src/`.** `src/services/reinforce_helpers.py::compute_returns(rewards, gamma)` returns $[G_0, G_1, \ldots, G_T]$ in O(T) via a reverse cumulative sum. Used by REINFORCE as the target for the policy update; A2C uses the TD-bootstrapped advantage instead (see `src/services/a2c_helpers.py::compute_advantages_td`).
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §4.3 — "G_t reverse-cumsum sanity check" (placeholder).
 
@@ -133,7 +133,7 @@ $$
 
 The brief's key remark (p. 18, end of §5.4): $\delta_t$ is **not** the Advantage itself — it is a one-sample, biased-but-low-variance *estimator* of $A^\pi(s_t, a_t)$. The bias goes to zero in expectation; the variance is bounded by a single transition's noise instead of the whole trajectory's.
 
-**How this maps to `src/`.** `src/training/td_error.py::compute_td_error(rewards, values_t, values_tp1, gamma)` returns $\delta_t$ per step. The same function feeds the actor update (eq. 10) and the critic loss (eq. 12).
+**How this maps to `src/`.** `src/services/a2c_helpers.py::compute_advantages_td(rewards, values_t, values_tp1, gamma)` returns $\delta_t$ per step. The same advantages tensor feeds the actor update (eq. 10, via `actor_loss`) and the critic loss (eq. 12, via `critic_loss`) in the same module.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §5.2 — "TD-error stability across episodes" (placeholder).
 
@@ -151,7 +151,7 @@ $$
 
 The brief's framing (p. 17, §5.1): the actor is the "football player on the pitch" and the critic is "the coach standing on the sideline saying *normally from this state you don't pass right*". The actor never sees the full trajectory return — only the critic's bite-sized $\delta_t$.
 
-**How this maps to `src/`.** `src/agents/a2c_agent.py::actor_update(states, actions, td_errors)` calls `loss = -(log_probs * td_errors.detach()).sum()` then `loss.backward()`. **Critical detail**: `.detach()` on $\delta_t$ — gradients must flow into $\theta$ via $\log\pi$, never into $\psi$ via the critic. (This is the most common A2C bug; we test for it explicitly in `tests/test_a2c_detaches_critic.py`.)
+**How this maps to `src/`.** `src/services/a2c_helpers.py::actor_loss(log_probs, advantages, entropy_coef, entropies)` computes `-(log_probs * advantages.detach()).mean()` minus the entropy bonus; `src/services/a2c_trainer.py::A2CTrainer.train` then calls `loss.backward()` on it. **Critical detail**: `.detach()` on $\delta_t$ — gradients must flow into $\theta$ via $\log\pi$, never into $\psi$ via the critic. (This is the most common A2C bug; we test for it explicitly under `tests/unit/services/`.)
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §5.3 — "A2C actor loss curve" (placeholder).
 
@@ -173,7 +173,7 @@ $$
 
 The brief's framing: the critic is "wrong by $\delta_t$"; minimising the MSE drives $V_\psi(s_t) \to \mathbb{E}[r_t + \gamma V_\psi(s_{t+1})]$ — exactly the Bellman fixed-point.
 
-**How this maps to `src/`.** `src/agents/a2c_agent.py::critic_update(states, td_errors)` calls `loss = 0.5 * (td_errors ** 2).mean()` then `loss.backward()`. The actor and critic share *no* parameters in our implementation — two separate `torch.optim.Adam` instances, one for $\theta$ and one for $\psi$.
+**How this maps to `src/`.** `src/services/a2c_helpers.py::critic_loss(values, targets)` returns `F.mse_loss(values, targets)` (the $\tfrac{1}{2}\,\delta_t^2$ form is algebraically equivalent up to a constant absorbed into the critic learning rate); `src/services/a2c_trainer.py` then calls `loss.backward()`. The actor and critic share *no* parameters in our implementation — `src/model/actor_critic.py::ActorCriticNet` has two independent (Linear→ReLU→Linear) heads, and two separate `torch.optim.Adam` instances step $\theta$ and $\psi$ respectively.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §5.4 — "critic-loss curve" (placeholder).
 
@@ -232,7 +232,7 @@ $$
 
 In the workout-recommender pipeline: $s_t$ is the daily state vector (7-day rolling volume, muscle-distribution, week-index, day-in-cycle, soreness proxy); $a_t \in \{0, \ldots, 6\}$ is the next-day workout *type*; $G_t$ is the discounted sum of eq. 15 rewards from day $t$ to end-of-episode (28-day horizon).
 
-**How this maps to `src/`.** `src/agents/reinforce_agent.py::train_episode(env)` runs one episode against the LSTM-simulated environment, collects $(s_t, a_t, r_t)$ tuples, computes $G_t$ via `reward_to_go`, and applies the cross-entropy surrogate loss (§X). The LSTM is loaded with `requires_grad=False` — the policy never updates the world model.
+**How this maps to `src/`.** `src/services/reinforce_trainer.py::REINFORCETrainer.run_episode` (called from `train`) runs one episode against the LSTM-backed environment, collects $(s_t, a_t, r_t)$ tuples, computes $G_t$ via `src/services/reinforce_helpers.py::compute_returns`, and applies the cross-entropy surrogate loss (§X) via `reinforce_loss`. The LSTM (`src/model/lstm_env_adapter.py`) is loaded with `requires_grad=False` — the policy never updates the world model.
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §7.4.3 — "REINFORCE training curve over LSTM world" (placeholder).
 
@@ -248,7 +248,7 @@ $$
 A_t \;=\; r_t \;+\; \gamma\, V_\psi(s_{t+1}) \;-\; V_\psi(s_t)
 $$
 
-**How this maps to `src/`.** `src/agents/a2c_agent.py::train_episode(env)` collects $(s_t, a_t, r_t, s_{t+1})$ tuples; calls $V_\psi$ on both $s_t$ and $s_{t+1}$ (the latter `.detach()`-ed so critic-bootstrap gradients do not leak into the actor); applies the actor update (eq. 10) using $A_t$ in place of $G_t$; and applies the critic update (eq. 11, MSE on $\delta_t$).
+**How this maps to `src/`.** `src/services/a2c_trainer.py::A2CTrainer.run_episode` (called from `train`) collects $(s_t, a_t, r_t, s_{t+1})$ tuples; calls $V_\psi$ on both $s_t$ and $s_{t+1}$ via `src/model/actor_critic.py::ActorCriticNet`; `src/services/a2c_helpers.py::compute_advantages_td` builds $A_t$ with the bootstrap value `.detach()`-ed so critic gradients do not leak into the actor; applies the actor update (eq. 10) using $A_t$ in place of $G_t$; and applies the critic update (eq. 11, MSE on $\delta_t$).
 
 **Notebook cross-link.** `notebooks/analysis.ipynb` cell §7.5.2 — "A2C vs REINFORCE training curves, mean ± std over N seeds" (placeholder).
 
@@ -300,7 +300,7 @@ weight = td_error.detach()   # A2C
 loss = (F.cross_entropy(logits, action, reduction='none') * weight).sum()
 ```
 
-This is why `src/training/loss.py` exposes a *single* function `weighted_ce_loss(logits, actions, weights)` shared by both agents (DRY — see CLAUDE.md §5). `tests/test_loss_equivalence.py` asserts numerical equality between the hand-rolled $-\log\pi \cdot G$ form and the `F.cross_entropy` form to 1e-6 tolerance.
+This is why `src/services/reinforce_helpers.py::reinforce_loss(log_probs, returns, baseline)` and `src/services/a2c_helpers.py::actor_loss(log_probs, advantages, ...)` share the same weighted-cross-entropy core — the only difference is what is plugged into the `weight` term ($G_t - b$ vs $\delta_t$) (DRY — see CLAUDE.md §5). The unit tests under `tests/unit/services/test_reinforce_helpers.py` assert the gradient-sign and zero-baseline invariants that make $-\log\pi \cdot G$ ≡ `F.cross_entropy(reduction='none') * G` to numerical tolerance.
 
 **Reference.** Brief §2.6, §2.7 (the only place the equivalence is written out); Williams [3] for the original derivation; PyTorch docs for `F.cross_entropy`.
 
