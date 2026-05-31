@@ -172,3 +172,7 @@ The Phase-4 build placed PolicyNet under `src/model/` and the REINFORCE trainer 
 ## Phase-5 freshness sweep (2026-05-31)
 
 Phase 5 placed Actor-Critic under `src/model/actor_critic.py` and A2C trainer/helpers/comparator under `src/services/` (not the planned `src/training/` paths). Updated rows: 2.3 (credit assignment now in reinforce_helpers + a2c_helpers), DA6 (eq.17 advantage now in src/services/a2c_helpers.py::compute_advantages_td), TR1 (REINFORCE-vs-A2C side-by-side now in src/services/comparator.py with ComparisonResult dataclass). DA4 (REINFORCE-vs-A2C comparison chart + notebook cell 7-8) explicitly DEFERRED TO PHASE 7 (analysis notebook).
+
+## Phase-6 freshness sweep (2026-05-31)
+
+Phase 6 placed the SDK facade at `src/sdk/sdk.py` (class `WorkoutSDK`, not `TrainingSDK` as planning text used). Updated rows: F15, F16, F17. F16 entry-point invariant test moved from planned `tests/test_architecture.py` to as-built `tests/test_sdk_facade.py`. F17 CLI verb test moved from `tests/test_cli.py` to `tests/test_cli_menu.py`. CLI is a numeric stdin menu (not argparse), so "verbs" are routed by integer choice; one test asserts all six verbs dispatch to the SDK.

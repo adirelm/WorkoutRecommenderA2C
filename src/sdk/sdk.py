@@ -73,6 +73,8 @@ class WorkoutSDK:
     def compare(self, seeds: int = 3, episodes: int = 5) -> ComparisonResult:
         r_hists: list[REINFORCEHistory] = []
         a_hists: list[A2CHistory] = []
+        a2c_nets: list[ActorCriticNet] = []
+        a2c_handles: list[PolicyHandle] = []
         for s in range(int(seeds)):
             seed = self.seed + s
             env_r = WorkoutEnv(seed=seed)
@@ -84,11 +86,14 @@ class WorkoutSDK:
             )
             env_a = WorkoutEnv(seed=seed)
             ac = ActorCriticNet(seed=seed)
-            a_hists.append(
-                A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
-                    episodes=int(episodes)
-                )
+            a_hist = A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
+                episodes=int(episodes)
             )
+            a_hists.append(a_hist)
+            a2c_nets.append(ac)
+            a2c_handles.append(build_policy_handle("A2C", a_hist.rewards, a_hist.episodes_run))
+        self._last_net = a2c_nets[-1]
+        self._last_policy_handle = a2c_handles[-1]
         return compare(r_hists, a_hists)
 
     # ----------------------------------------------------------- recommend

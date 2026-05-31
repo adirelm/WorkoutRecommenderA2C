@@ -77,26 +77,31 @@ def test_run_with_eof_returns_zero(sdk, stdout):
 
 def test_train_reinforce_verb_calls_sdk(sdk, stdout):
     menu = _menu(sdk, "", stdout)
-    with patch.object(sdk, "train_reinforce", return_value="FAKE_POLICY") as m:
+    fake_handle = MagicMock(algorithm="REINFORCE", final_reward=1.23, episodes_trained=10)
+    with patch.object(sdk, "train_reinforce", return_value=(fake_handle, MagicMock())) as m:
         keep_going = menu.handle_choice("3")
         assert keep_going is True
         m.assert_called_once()
-    assert "train-reinforce" in stdout.getvalue()
-    assert "FAKE_POLICY" in stdout.getvalue()
+    out = stdout.getvalue()
+    assert "train-reinforce" in out
+    assert "REINFORCE" in out
+    assert "1.23" in out
 
 
 def test_all_six_verbs_dispatch_to_sdk(stdout):
     mock_sdk = MagicMock(spec=WorkoutSDK)
     mock_sdk.prepare_data.return_value = "LB"
     mock_sdk.train_world_model.return_value = "WM"
-    mock_sdk.train_reinforce.return_value = "PR"
-    mock_sdk.train_a2c.return_value = "PA"
+    fake_r = MagicMock(algorithm="REINFORCE", final_reward=0.5, episodes_trained=10)
+    fake_a = MagicMock(algorithm="A2C", final_reward=0.7, episodes_trained=10)
+    mock_sdk.train_reinforce.return_value = (fake_r, MagicMock())
+    mock_sdk.train_a2c.return_value = (fake_a, MagicMock())
     mock_sdk.compare.return_value = {"winner": "A2C"}
-    mock_sdk.recommend.return_value = "REC"
+    mock_sdk.recommend.return_value = MagicMock(action_name="REST", action_id=0, probs=[0.5, 0.5])
 
     menu = CLIMenu(sdk=mock_sdk, stdin=io.StringIO(""), stdout=stdout)
     for choice in ("1", "2", "3", "4", "5", "6"):
-        assert menu.handle_choice(choice) is True
+        assert menu.handle_choice(choice) is True, f"choice {choice} failed: {stdout.getvalue()}"
 
     mock_sdk.prepare_data.assert_called_once()
     mock_sdk.train_world_model.assert_called_once()

@@ -5,10 +5,10 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from src.env.state import State
+from src.env.state import STATE_DIM, State
 from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
-from src.sdk.types import PolicyHandle, WorkoutRecommendation
+from src.sdk.types import UNKNOWN_REWARD, PolicyHandle, WorkoutRecommendation
 
 
 def build_policy_handle(
@@ -29,12 +29,24 @@ def _logits_and_value(
     net: PolicyNet | ActorCriticNet,
     state_t: torch.Tensor,
 ) -> tuple[torch.Tensor, float]:
-    """Return (logits, scalar V(s)) — V=0.0 for REINFORCE PolicyNet (no critic)."""
+    """Return (logits, scalar V(s)) — V=UNKNOWN_REWARD for REINFORCE PolicyNet (no critic)."""
     if isinstance(net, ActorCriticNet):
         logits, value = net.forward(state_t)
         return logits, float(value.detach().item())
     logits = net.forward(state_t)
-    return logits, 0.0
+    return logits, UNKNOWN_REWARD
+
+
+def _mask_logits(logits: torch.Tensor, mask_t: torch.Tensor) -> torch.Tensor:
+    """Set logits at illegal positions to -inf so softmax zeros them out.
+
+    Inlined here (rather than reaching into ``PolicyNet._apply_mask``) so the
+    SDK layer does not depend on a private attribute of the model layer — the
+    masking rule is one line and is part of the SDK's public recommendation
+    contract, not an internal model detail.
+    """
+    neg_inf = torch.full_like(logits, float("-inf"))
+    return torch.where(mask_t, logits, neg_inf)
 
 
 def recommend_from_net(
@@ -46,17 +58,19 @@ def recommend_from_net(
 ) -> WorkoutRecommendation:
     """Greedy-argmax recommendation from a trained policy (mask-aware).
 
-    Returns probabilities (softmax over masked logits, sums to 1), the picked
-    action's name, an expected reward proxy (critic value for A2C, 0.0 for
-    REINFORCE), and the *current* state as a stand-in for the predicted next
-    state (the SDK does not own the LSTM rollout — that's Phase 3 territory).
+    Returns softmax probabilities over masked logits (sums to 1), the picked
+    action's name, an honest expected-reward proxy (critic value for A2C,
+    :data:`UNKNOWN_REWARD` for REINFORCE), and a zero-vector for
+    ``next_state_predicted`` — the SDK's ``recommend()`` deliberately does not
+    wire a frozen world-model into this path. See
+    :class:`WorkoutRecommendation` for the full contract.
     """
     state_arr = state.to_array()
     state_t = torch.as_tensor(state_arr, dtype=torch.float32)
     with torch.no_grad():
         logits, value = _logits_and_value(net, state_t)
         mask_t = torch.as_tensor(mask, dtype=torch.bool)
-        masked = net._apply_mask(logits, mask_t)
+        masked = _mask_logits(logits, mask_t)
         probs_t = torch.softmax(masked, dim=-1)
         probs = tuple(float(p) for p in probs_t.tolist())
         action_id = int(torch.argmax(masked).item())
@@ -66,6 +80,6 @@ def recommend_from_net(
         action_id=action_id,
         action_name=action_names[action_id],
         probs=probs,
-        next_state_predicted=tuple(float(x) for x in state_arr.tolist()),
+        next_state_predicted=(0.0,) * STATE_DIM,
         expected_reward=value,
     )

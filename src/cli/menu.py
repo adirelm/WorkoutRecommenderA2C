@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from typing import TextIO
 
+from src.sdk import State
 from src.sdk.sdk import WorkoutSDK
 
 _VERBS: tuple[tuple[str, str, str], ...] = (
@@ -46,17 +47,25 @@ class CLIMenu:
             handle = self.sdk.train_world_model()
             return f"[ok] train-world-model → {handle}"
         if choice == "3":
-            handle = self.sdk.train_reinforce()
-            return f"[ok] train-reinforce → {handle}"
+            handle, _history = self.sdk.train_reinforce()
+            return (
+                f"[ok] train-reinforce → {handle.algorithm} "
+                f"final_reward={handle.final_reward:.2f} "
+                f"episodes={handle.episodes_trained}"
+            )
         if choice == "4":
-            handle = self.sdk.train_a2c()
-            return f"[ok] train-a2c → {handle}"
+            handle, _history = self.sdk.train_a2c()
+            return (
+                f"[ok] train-a2c → {handle.algorithm} "
+                f"final_reward={handle.final_reward:.2f} "
+                f"episodes={handle.episodes_trained}"
+            )
         if choice == "5":
             result = self.sdk.compare()
             return f"[ok] compare → {result}"
         if choice == "6":
-            rec = self.sdk.recommend()
-            return f"[ok] recommend → {rec}"
+            rec = self.sdk.recommend(State.initial())
+            return f"[ok] recommend → {rec.action_name} (id={rec.action_id}) probs={rec.probs}"
         raise ValueError(f"Unknown choice: {choice!r}")
 
     def handle_choice(self, choice: str) -> bool:
@@ -68,7 +77,7 @@ class CLIMenu:
         try:
             message = self._dispatch(choice)
             self.stdout.write(message + "\n")
-        except (ValueError, RuntimeError, NotImplementedError) as exc:
+        except (ValueError, RuntimeError, NotImplementedError, TypeError) as exc:
             self.stdout.write(f"[error] {type(exc).__name__}: {exc}\n")
         return True
 
