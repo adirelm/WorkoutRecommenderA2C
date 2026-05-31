@@ -86,6 +86,19 @@ class BaseTrainer(ABC):
     def train(self, episodes: int | None = None) -> Any:
         """Episode loop with per-algorithm update; returns a History dataclass."""
 
+    @classmethod
+    @abstractmethod
+    def build(cls, env: WorkoutEnv, seed: int, episodes: int) -> BaseTrainer:
+        """Construct a fully-wired trainer (net + config) for this algorithm.
+
+        V3 §12 open-closed seam: SDK.train() looks up the trainer class in
+        ``WorkoutSDK._TRAINER_REGISTRY`` and calls this classmethod — so the
+        per-algorithm net + config plumbing lives next to the algorithm, not
+        inside the SDK facade. Subclasses MUST also expose a ``.net``
+        attribute (the trained network) so the SDK can cache it for
+        :meth:`WorkoutSDK.recommend`.
+        """
+
     # ----------------------------------------------------------- shared helpers
     def sample_action(
         self,

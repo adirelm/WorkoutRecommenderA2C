@@ -97,11 +97,32 @@ re-execute) is enforced by the same pipeline that runs the tests.
   notebook is excluded from coverage but contains no business logic.
 - The SDK facade gives a grader a single drill-down path and gives a future
   contributor a single extension point (add a new on-policy algorithm →
-  subclass `src.services.base_trainer.BaseTrainer`, register it in
-  `WorkoutSDK._TRAINER_REGISTRY`, and the generic `sdk.train(algo, ...)`
-  dispatcher routes to it with zero edits to the facade body). Worked
-  example: `class PPOTrainer(BaseTrainer): ...` + `_TRAINER_REGISTRY["ppo"] = PPOTrainer`
-  is the *entire* diff needed to expose a PPO algorithm through the SDK.
+  subclass `src.services.base_trainer.BaseTrainer`, implement the abstract
+  `build(env, seed, episodes) → cls` classmethod plus a `.net` property,
+  register the class in `WorkoutSDK._TRAINER_REGISTRY`, and the generic
+  `sdk.train(algo, ...)` dispatcher routes to it with zero edits to the
+  facade body — `SDK.train()` is a pure registry lookup, no if/elif fallback).
+  Worked example: dropping in PPO is exactly these three lines —
+
+  ```python
+  # src/services/ppo_trainer.py
+  class PPOTrainer(BaseTrainer):
+      @classmethod
+      def build(cls, env, seed, episodes):
+          return cls(ActorCriticNet(seed=seed), env, PPOConfig(episodes=episodes), seed=seed)
+      @property
+      def net(self): return self.ac_net
+      def forward_step(self, state_t, mask_t): ...   # actor-critic forward
+      def train(self, episodes=None): ...            # PPO clipped-ratio update
+
+  # src/sdk/sdk.py — only line touched in the SDK facade
+  _TRAINER_REGISTRY = {"reinforce": REINFORCETrainer, "a2c": A2CTrainer, "ppo": PPOTrainer}
+  ```
+
+  After that, `sdk.train("ppo", episodes=N)` works end-to-end (handle +
+  history caching, `.recommend()` wiring, CLI menu, GUI dropdown — all
+  via the same code path REINFORCE and A2C already use). The body of
+  `SDK.train()` itself is never edited again.
 - The §7.6 discussion lives next to the figures it discusses, so the
   understanding-vs-result tension the rubric flags is answered structurally
   rather than rhetorically.

@@ -42,6 +42,19 @@ class REINFORCETrainer(BaseTrainer):
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=cfg.lr)
         self.baseline = RunningMeanBaseline(alpha=cfg.baseline_alpha)
 
+    # ----------------------------------------------------------- registry hook
+    @classmethod
+    def build(cls, env: WorkoutEnv, seed: int, episodes: int) -> REINFORCETrainer:
+        """SDK-facing factory (V3 §12): builds PolicyNet + REINFORCEConfig + trainer."""
+        policy = PolicyNet(seed=seed)
+        cfg = REINFORCEConfig(episodes=int(episodes))
+        return cls(policy=policy, env=env, config=cfg, seed=seed)
+
+    @property
+    def net(self) -> PolicyNet:
+        """Uniform accessor used by SDK to cache the trained network."""
+        return self.policy
+
     # ----------------------------------------------------------- forward hook
     def forward_step(
         self,

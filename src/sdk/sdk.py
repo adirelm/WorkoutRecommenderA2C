@@ -65,44 +65,38 @@ class WorkoutSDK:
 
     # ------------------------------------------------------------- trainers
     def train(self, algo: str, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory | A2CHistory]:
-        """Generic registry-driven trainer dispatch (V3 §12 open-closed).
+        """Pure registry-driven trainer dispatch (V3 §12 open-closed).
 
-        Looks up ``algo`` in :attr:`_TRAINER_REGISTRY`, builds the right
-        network + config pair, instantiates the trainer, and returns the
+        Looks up ``algo`` in :attr:`_TRAINER_REGISTRY`, delegates net+config
+        wiring to the trainer's own ``build`` classmethod, runs ``train()``,
+        caches the trained net + handle, and returns the
         ``(handle, history)`` tuple the CLI / GUI / tests already consume.
+
+        Adding a new algo (e.g. PPO) is a registry-only change: subclass
+        :class:`BaseTrainer`, implement ``build`` + ``train`` + ``net``, and
+        register the class — no edits to this method body.
         """
         key = algo.lower()
         if key not in self._TRAINER_REGISTRY:
             raise ValueError(f"unknown algo {algo!r}; registered: {sorted(self._TRAINER_REGISTRY)}")
-        if key == "reinforce":
-            return self.train_reinforce(episodes=episodes)
-        if key == "a2c":
-            return self.train_a2c(episodes=episodes)
-        # Defensive fallback — registry has a key but this dispatcher doesn't
-        # know how to wire its net/config pair. Adding a new algo should also
-        # extend this elif chain (or a future _build_trainer factory).
-        raise NotImplementedError(f"registry key {key!r} has no wiring in SDK.train")
+        trainer_cls = self._TRAINER_REGISTRY[key]
+        trainer = trainer_cls.build(env=self.ensure_env(), seed=self.seed, episodes=int(episodes))
+        history = trainer.train(episodes=int(episodes))
+        handle = build_policy_handle(key.upper(), history.rewards, history.episodes_run)
+        self._last_policy_handle = handle
+        self._last_net = trainer.net
+        return handle, history
 
     def train_reinforce(self, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory]:
-        """Train REINFORCE policy; returns (handle, per-episode history). Brief §7.4."""
-        env = self.ensure_env()
-        policy = PolicyNet(seed=self.seed)
-        cfg = REINFORCEConfig(episodes=int(episodes))
-        history = REINFORCETrainer(policy, env, cfg, seed=self.seed).train(episodes=int(episodes))
-        handle = build_policy_handle("REINFORCE", history.rewards, history.episodes_run)
-        self._last_policy_handle = handle
-        self._last_net = policy
+        """Backward-compat wrapper around ``train("reinforce", ...)``. Brief §7.4."""
+        handle, history = self.train("reinforce", episodes=episodes)
+        assert isinstance(history, REINFORCEHistory)
         return handle, history
 
     def train_a2c(self, episodes: int = 10) -> tuple[PolicyHandle, A2CHistory]:
-        """Train A2C actor-critic; returns (handle, per-episode history). Brief §7.5."""
-        env = self.ensure_env()
-        ac = ActorCriticNet(seed=self.seed)
-        cfg = A2CConfig(episodes=int(episodes))
-        history = A2CTrainer(ac, env, cfg, seed=self.seed).train(episodes=int(episodes))
-        handle = build_policy_handle("A2C", history.rewards, history.episodes_run)
-        self._last_policy_handle = handle
-        self._last_net = ac
+        """Backward-compat wrapper around ``train("a2c", ...)``. Brief §7.5."""
+        handle, history = self.train("a2c", episodes=episodes)
+        assert isinstance(history, A2CHistory)
         return handle, history
 
     # ----------------------------------------------------------- comparison

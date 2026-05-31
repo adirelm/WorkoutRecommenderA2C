@@ -40,6 +40,19 @@ class A2CTrainer(BaseTrainer):
             lr=cfg.critic_lr,
         )
 
+    # ----------------------------------------------------------- registry hook
+    @classmethod
+    def build(cls, env: WorkoutEnv, seed: int, episodes: int) -> A2CTrainer:
+        """SDK-facing factory (V3 §12): builds ActorCriticNet + A2CConfig + trainer."""
+        ac = ActorCriticNet(seed=seed)
+        cfg = A2CConfig(episodes=int(episodes))
+        return cls(ac_net=ac, env=env, config=cfg, seed=seed)
+
+    @property
+    def net(self) -> ActorCriticNet:
+        """Uniform accessor used by SDK to cache the trained network."""
+        return self.ac_net
+
     # ----------------------------------------------------------- forward hook
     def forward_step(
         self,
