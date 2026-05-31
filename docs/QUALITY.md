@@ -6,7 +6,7 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 
 ## 1. Functional Suitability (completeness, correctness, appropriateness)
 - Brief §7 deliverables all present: see docs/TRACE.md
-- 402 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85
+- 418 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85
 - Acceptance criteria documented per feature in docs/PRD.md
 
 ## 2. Performance Efficiency (time-behavior, resource-utilization, capacity)
@@ -16,8 +16,9 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 - Streamlit GUI uses @st.cache_resource for the heavy SDK instance (src/gui/state.py)
 - A2C training scales linearly in episodes; no quadratic blow-up
 - Parallel processing / thread safety: intentionally out-of-scope (single-process
-  training, no multiprocessing / no torch.distributed). See docs/PLAN.md §6 and
-  ADR-007 for rationale (academic single-GPU/CPU project; complexity > value here).
+  training, no multiprocessing / no torch.distributed). See docs/PLAN.md §6 for
+  rationale (academic single-GPU/CPU project; GIL not the bottleneck on a
+  sequential RL loop at this scale; complexity > value here).
 - Limitation: no formal perf benchmark suite (single-process academic project)
 
 ## 3. Compatibility (co-existence, interoperability)
@@ -32,7 +33,7 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 
 ## 5. Reliability (maturity, availability, fault-tolerance, recoverability)
 - Deterministic seeding (src/utils/seeding.py) — every entry point seeds torch+numpy+python random
-- Tests assert reproducibility (e.g. tests/test_seeding.py)
+- Tests assert reproducibility (e.g. tests/integration/test_reproducibility.py)
 - Graceful Kaggle fallback to synthetic deterministic trainee when CLI unavailable
 
 ## 6. Security (confidentiality, integrity, authenticity, non-repudiation, accountability)
@@ -95,3 +96,13 @@ A critical grader could legitimately push back on the following:
 None of these are correctness bugs. All are acknowledged tradeoffs
 that fall out of the brief's scope (academic toy environment,
 tractable interactive GUI demo, single-developer time budget).
+
+## Self-grade (V3 §1.4 architect transparency)
+
+Self-grade target: 93/100 (NOT 100). Honest framing per A1 over-confidence
+lesson. This grade is committed here in the public docs so it is verifiable
+without inspecting the (gitignored) Moodle cover sheet.
+
+Breakdown justification: implementation hygiene strong (TDD + ≥85% cov + ruff
+clean + 10 ADRs); experimental rigor middling (10 seeds is Spinning Up floor,
+not confidence level); documentation thorough (3 audit rounds + 14 fix passes).
