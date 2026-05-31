@@ -348,7 +348,7 @@ class TrainingSDK:
     # F4–F6
     def train_world_model(
         self, logbook: LogbookHandle
-    ) -> WorldModelHandle: ...
+    ) -> WorldModelResult: ...
 
     # F7–F9
     def train_reinforce(
@@ -367,13 +367,38 @@ class TrainingSDK:
 
     # F15
     def recommend(
-        self, state: State, policy: PolicyHandle
-    ) -> WorkoutRecommendation: ...
+        self, state: State, policy: PolicyHandle, world_model: WorldModelHandle
+    ) -> WorkoutRecommendation:
+        """next_state in the recommendation comes from world_model.rollout(state, ...)"""
+
+    # Action masking surface (ADR-004)
+    def action_mask(self, state: State, history: list[int]) -> np.ndarray:
+        """Returns a bool array of shape (ACTION_COUNT,) — UIs need this to
+        display "valid recommendations only"."""
+
+
+@dataclass(frozen=True)
+class WorldModelResult:
+    handle: WorldModelHandle
+    history: LSTMTrainHistory   # train_loss, val_loss, best_epoch — consumed by notebook Phase 7
+
+
+class WorldModelHandle:
+    def rollout(
+        self, initial_state: State, policy: Callable[[State], int], horizon: int
+    ) -> np.ndarray:
+        """Returns (horizon, STATE_DIM) array of predicted states. Used by
+        analysis notebook (Phase 7) for §7.7 LSTM-loss-curve and
+        rollout-trajectory plots."""
 ```
 
 All return types are `@dataclass(frozen=True)`. No method exposes a `nn.Module`
 to callers — handles are opaque and serializable. The action-probability
 vector inside `WorkoutRecommendation` is fixed-length 7.
+
+PRD §6 updated 2026-05-31 (Phase 3 validation) to expose `LSTMTrainHistory`,
+world-model rollout, action mask, and the `world_model` argument to
+`recommend()`. Phase 6 (SDK facade) implements these signatures.
 
 ---
 

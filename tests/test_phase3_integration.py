@@ -12,7 +12,9 @@ from src.model.types import LSTMTrainConfig
 
 
 def test_end_to_end_lstm_pipeline():
-    """Generate small trajectory → train LSTM (few epochs) → wrap in adapter → rollout 5 steps without crashing."""
+    """Generate small trajectory → train LSTM → wrap in adapter → chained 5-step
+    rollout (each step feeds the previous predicted state back in, with varying
+    actions) — exercises rolling-buffer + action-conditioning end-to-end."""
     traj = generate_trajectory(num_days=28, seed=42)
     windows = build_windows(traj, window_len=7)
     train_w, val_w = split_train_val(windows, val_days=7)
@@ -23,15 +25,19 @@ def test_end_to_end_lstm_pipeline():
     trainer = LSTMTrainer(model, config, seed=42)
     history = trainer.fit(train_w, val_w)
     assert history.epochs_run == 3
-    assert all(not math.isnan(v) for v in history.train_loss)  # no NaN
+    # Mutation-killer: every train_loss must be finite AND loss must drop.
+    assert all(math.isfinite(v) for v in history.train_loss), f"non-finite train_loss: {history.train_loss}"
+    assert history.train_loss[-1] < history.train_loss[0], f"loss did not decrease: {history.train_loss}"
 
     model.freeze()
     adapter = LSTMEnvAdapter(model, window_len=7)
     adapter.reset(State.initial())
-    for _ in range(5):
-        next_s = adapter.next_state(State.initial(), action_id=0)
-        assert isinstance(next_s, State)
-        arr = next_s.to_array()
+    # Proper chain: feed previous predicted state back, vary action_id per step.
+    state = State.initial()
+    for t in range(5):
+        state = adapter.next_state(state, action_id=t % 7)
+        assert isinstance(state, State)
+        arr = state.to_array()
         assert arr.shape == (STATE_DIM,)
         assert not any(math.isnan(x) for x in arr)  # no NaN
 

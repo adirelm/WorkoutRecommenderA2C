@@ -23,12 +23,15 @@ def test_forward_output_shape():
 
 
 def test_forward_one_hot_action_concat():
-    """Verify the model accepts integer action indices and produces correct shape.
+    """Verify the model accepts integer action indices, produces correct shape,
+    AND that the action actually influences the prediction.
 
-    Internally the action ids are embedded/one-hot'd and concatenated with the
-    state vector before the LSTM. This test asserts the public contract: integer
-    action_seq in → (batch, STATE_DIM) prediction out, even for non-default sizes.
+    Internally the action ids are embedded and concatenated with the state vector
+    before the LSTM. A mutant that drops the action (e.g., feeds only state_seq)
+    would yield identical outputs for any two action ids on the same state — so
+    we assert different actions on identical states yield DIFFERENT predictions.
     """
+    torch.manual_seed(0)
     model = LSTMWorldModel(hidden_size=32, num_layers=2)
     state_seq, action_seq = _make_inputs(batch=4, seq=5)
     out = model(state_seq, action_seq)
@@ -39,6 +42,15 @@ def test_forward_one_hot_action_concat():
         s = torch.randn(2, 3, STATE_DIM, dtype=torch.float32)
         out2 = model(s, action_seq_const)
         assert out2.shape == (2, STATE_DIM)
+    # Mutation-killer: same state, different action ids → different outputs.
+    same_state = torch.randn(1, 4, STATE_DIM, dtype=torch.float32)
+    action_a = torch.zeros(1, 4, dtype=torch.long)
+    action_b = torch.full((1, 4), ACTION_COUNT - 1, dtype=torch.long)
+    out_a = model(same_state, action_a)
+    out_b = model(same_state, action_b)
+    assert not torch.allclose(out_a, out_b), (
+        "outputs identical for different actions — action signal is being dropped"
+    )
 
 
 def test_forward_dtype_float32():
@@ -95,3 +107,8 @@ def test_gradient_flows_when_not_frozen():
     grads = [p.grad for p in model.parameters() if p.requires_grad]
     assert len(grads) > 0
     assert all(g is not None for g in grads)
+    # Mutation-killer: a detached-but-allocated grad path would have all-zero
+    # grads. At least one parameter must have non-zero gradient signal.
+    assert any(g.abs().sum().item() > 0.0 for g in grads), (
+        "all gradients are zero — autograd graph appears detached"
+    )

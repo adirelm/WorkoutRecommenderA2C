@@ -39,7 +39,7 @@ is cut.
 | 1.1 | Brief §1 | מהי מדיניות: וקטור של הסתברויות — π_θ(a\|s) מתאר וקטור הסתברויות; הפרמטרים של המדיניות מסומנים ב-θ. | docs/THEORY.md §1.1 + src/policy/policy_net.py (Categorical head over 7 actions) | test_policy_outputs_probability_distribution | MUST |
 | 1.2 | Brief §1 | פונקציית המטרה J(θ) = E_{τ~π_θ}[ Σ γ^t r_t ]. | docs/THEORY.md §1.2 + src/training/objective.py | test_discounted_return_formula | MUST |
 | 1.3 | Brief §1 | המצב כווקטור של מספרים: דוגמת ה-Cart — ארבעה ערכים מתארים את המצב. | docs/THEORY.md §1.3 + docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002, 12-d state vector spec) | test_state_vector_shape | MUST |
-| 1.4 | Brief §1 | מקומי מול מצטבר: RNN/LSTM/Transformer; POMDP; רצף תצפיות h_t; "מודלי עולם" שאליהם נחזור בפרק 7. | docs/THEORY.md §1.4 + src/world_model/lstm_world.py | test_lstm_history_window | MUST |
+| 1.4 | Brief §1 | מקומי מול מצטבר: RNN/LSTM/Transformer; POMDP; רצף תצפיות h_t; "מודלי עולם" שאליהם נחזור בפרק 7. | docs/THEORY.md §1.4 + src/model/lstm_world.py | tests/test_lstm_world.py::test_forward_output_shape | MUST |
 | 2.1 | Brief §2 | תהליך האימון: אפיזודה מתחילה ברשת מאותחלת אקראית; דגימת פעולה לפי הסתברויות; שיפור עד סוף האפיזודה. | src/training/reinforce_trainer.py (episode loop) | test_episode_loop_random_init_sample_update | MUST |
 | 2.2 | Brief §2 | מתי נגמרת אפיזודה: (1) הגעתי לפרס, (2) נכשלתי, (3) נגמרו המצבים. MDP timeout only — cases (1) and (2) collapsed per ADR-005 (no scalar reward target; action-masking in ADR-004 prevents injury-equivalent failure events). | src/env/workout_env.py (case 3 only) + docs/adr/ADR-005-terminal-conditions.md | test_done_after_episode_length_steps + test_action_mask_prevents_injury_event (case-1 N/A — see ADR-005) | MUST |
 | 2.3 | Brief §2 | קרדיט משותף — סך הניקוד מהאפיזודה מחולק לכל הפעולות שלאורכה. | src/training/credit_assignment.py | test_return_propagated_to_all_steps | MUST |
@@ -58,7 +58,7 @@ is cut.
 | D5 | Brief §7.2.4 (eq. 13) | Single-trainee trajectory builder: filter chosen_program (≥8wk, Full Gym, 45-120min); daily aggregation total_volume_t = Σ(sets·reps); REST DAY insertion; trajectory (s_1..s_T) | src/data/aggregator.py | test_daily_aggregation_eq13 + test_rest_day_inserted | MUST |
 | D6 | Brief §7.7 | Submission cites dataset URL + key files + license + chosen program (PHUL primary) | README §Dataset + docs/PRD.md §10 | test_readme_cites_dataset_url | MUST |
 | DA1 | Brief §7.1.2 Part A | Formal written MDP definition (state/action/reward/transition) + pipeline pseudocode | docs/THEORY.md §1.1-1.4 + docs/PRD.md §1.5-1.7 | test_part_a_mdp_writeup_present | MUST |
-| DA2 | Brief §7.3.1 Part C | LSTM loss curves (train + val) + temporal-pattern discussion | results/lstm_loss.png + notebooks/analysis.ipynb cell 3 | test_lstm_loss_chart_exists | MUST |
+| DA2 | Brief §7.3.1 Part C | LSTM loss curves (train + val) + temporal-pattern discussion | results/lstm_loss.png + notebooks/analysis.ipynb cell 3 — DEFERRED TO PHASE 7 (analysis notebook) | test_lstm_loss_chart_exists | MUST |
 | DA3 | Brief §7.4.3 Part D | REINFORCE training Loss curve + avg-return graph + weekly-load variance diagnostic | results/reinforce_rewards.png + results/reinforce_variance.png + notebooks/analysis.ipynb cell 5 | test_reinforce_reward_chart_exists | MUST |
 | DA4 | Brief §7.5.1 Part E | A2C actor+critic Loss curves + side-by-side REINFORCE vs A2C comparison | results/a2c_training.png + results/comparison.png + notebooks/analysis.ipynb cells 7-8 | test_a2c_and_comparison_charts_exist | MUST |
 | DA5 | Brief §7.7 | Submission-list roll-up: preprocessing code + trainee trajectory + LSTM impl + REINFORCE impl + A2C impl + summary discussion | tests/test_submission_manifest.py asserts each artefact path | test_submission_manifest_all_present | MUST |
@@ -72,8 +72,8 @@ is cut.
 | AM2 | Brief §7.6.1 | Simplified-reward acknowledgement + hierarchical-decision limitation discussion | notebooks/analysis.ipynb §reward-simplification + README §Honest Limitations (d) | n/a | MUST |
 | TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/comparison/reinforce_vs_a2c.png + docs/ANALYSIS.md | test_both_agents_train_to_completion | MUST |
 | TR2 | Transcript / grading_hints | STATE/ACTION DESIGN IS GRADED: justify which dataset columns become actions vs states (01:18:27). | docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002) + docs/ACTION_DESIGN.md (pointer to PRD §1.6 + ADR-004, 7-action set) | n/a (doc artifact) | MUST |
-| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/world_model/lstm_world.py + src/training/rl_on_world_model.py | test_pipeline_lstm_then_rl | MUST |
-| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/training/rl_on_world_model.py (requires_grad=False) | test_lstm_params_frozen_during_rl | MUST |
+| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/training/rl_on_world_model.py — DEFERRED TO PHASE 4 (REINFORCE) | test_pipeline_lstm_then_rl | MUST |
+| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/training/rl_on_world_model.py (requires_grad=False) — DEFERRED TO PHASE 4 (REINFORCE) | test_lstm_params_frozen_during_rl | MUST |
 | TR5 | Transcript / grading_hints | SIMPLE NET: 1-layer FC, 128 neurons (01:06:59). | src/policy/policy_net.py (architecture) + config/config.yaml | test_policy_net_hidden_size_128_single_layer | MUST |
 | TR6 | Transcript / grading_hints | STOCHASTIC POLICY DURING TRAINING: sample (Categorical), not argmax. | src/policy/policy_net.py (sample at train) | test_training_uses_categorical_sample_not_argmax | MUST |
 | TR7 | Transcript / grading_hints | Check latest assignment PDF before starting (uploaded late). | docs/SOURCES.md (assignment PDF hash + date) | n/a (process artifact) | SHOULD |
@@ -160,3 +160,7 @@ PRD) before the submission tag is cut.
 - Compute / runtime budget is not specified. Affects whether A2C can use
   parallel workers; needs a self-decision before locking the TR1 deliverable
   scope.
+
+## Phase-3 freshness sweep (2026-05-31)
+
+Path: TRACE planned `src/world_model/` but as-built layout is `src/model/` for all LSTM modules. Updated rows: 1.4, F4, F6, DA6-eq.17, TR3, TR4. Underlying tests pass identically; only the path/test-id strings drifted between the planning workflow and Phase-3 implementation.

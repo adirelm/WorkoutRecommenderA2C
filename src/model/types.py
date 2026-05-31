@@ -38,6 +38,7 @@ class LSTMTrainConfig:
     batch_size: int = 16
     val_split_days: int = 7
     grad_clip_norm: float = 1.0
+    action_embed_dim: int = 8
 
 
 @dataclass(frozen=True)

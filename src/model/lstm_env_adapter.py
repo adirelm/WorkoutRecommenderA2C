@@ -4,7 +4,7 @@ Phase-4 replacement for SyntheticTrainee: wraps a trained, FROZEN
 LSTMWorldModel + a rolling state/action history buffer to expose the
 same ``next_state(state, action_id, prescribed_volume, prescribed_muscles)``
 contract. The prescribed_* args are accepted (API parity) but ignored —
-the LSTM has learned the (state, action) → next_state mapping on its own.
+the LSTM is trained to predict (state, action) → next_state.
 
 Output values are clamped to declared State ranges (see ADR-002):
 - fatigue / soreness_* / readiness / weekly_progress → [0, 1]  (weekly_progress
@@ -29,6 +29,11 @@ class LSTMEnvAdapter:
     def __init__(self, model: LSTMWorldModel, window_len: int = 7) -> None:
         if window_len <= 0:
             raise ValueError(f"window_len must be positive, got {window_len}")
+        if not model.is_frozen():
+            raise RuntimeError(
+                "Call model.freeze() before constructing LSTMEnvAdapter "
+                "(brief §7.3 — LSTM frozen during RL phase)."
+            )
         self.model = model
         self.window_len = int(window_len)
         self._state_history: list[State] = []
@@ -57,7 +62,7 @@ class LSTMEnvAdapter:
 
         ``prescribed_volume`` and ``prescribed_muscles`` are accepted for API
         parity with :class:`SyntheticTrainee` and intentionally ignored — the
-        LSTM has learned the (state, action) → next_state mapping directly."""
+        LSTM is trained to predict (state, action) → next_state."""
         del prescribed_volume, prescribed_muscles  # API parity, not consumed here
         if not self.model.is_frozen():
             raise RuntimeError("LSTMEnvAdapter requires a frozen model (call model.freeze()).")

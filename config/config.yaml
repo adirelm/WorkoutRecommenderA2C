@@ -34,6 +34,7 @@ lstm:
   window: 7                  # rolling-window length
   batch_size: 16
   val_split_days: 7
+  action_embed_dim: 8        # action-id embedding width fed alongside state
 
 reinforce:
   policy_hidden: 128         # TR5: 1-layer FC, 128 (brief lecture hint)

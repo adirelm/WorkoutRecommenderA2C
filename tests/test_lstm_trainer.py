@@ -53,7 +53,9 @@ def test_fit_returns_history_with_epoch_count_epochs():
 
 
 def test_fit_train_loss_monotone_average():
-    trainer = _trainer(epochs=5)
+    # Setup tuned to reliably converge: lr=1e-2, batch_size=4, 10 epochs,
+    # deterministic small dataset. The trainer fixture already uses lr=1e-2.
+    trainer = _trainer(epochs=10, batch_size=4)
     train = _make_windows(20, seed=11)
     val = _make_windows(4, seed=12)
     history = trainer.fit(train, val)
@@ -62,6 +64,13 @@ def test_fit_train_loss_monotone_average():
     assert sum(last_two) / 2.0 < sum(first_two) / 2.0, (
         f"loss did not decrease on average: first={first_two} last={last_two}"
     )
+    # Mutation-killer: require a non-trivial 90% reduction floor (mutants that
+    # disable the optimizer step or zero the gradient would not achieve this).
+    assert history.train_loss[-1] < history.train_loss[0] * 0.9, (
+        f"loss reduction <10%: first={history.train_loss[0]} last={history.train_loss[-1]}"
+    )
+    # Mutation-killer: every reported train_loss must be finite (no NaN/Inf).
+    assert all(math.isfinite(v) for v in history.train_loss), f"non-finite train_loss: {history.train_loss}"
 
 
 def test_fit_val_loss_finite_no_nan():
