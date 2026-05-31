@@ -36,9 +36,7 @@ def zero_share() -> dict[str, float]:
     return {"push": 0.0, "pull": 0.0, "legs": 0.0, "core": 0.0}
 
 
-def update_muscle_share(
-    share: dict[str, float], group: str, volume_delta: float
-) -> None:
+def update_muscle_share(share: dict[str, float], group: str, volume_delta: float) -> None:
     """Mutate ``share`` in place: add ``volume_delta`` to the bucket of ``group``."""
     key = GROUP_TO_SHARE_KEY.get(group, "core")
     share[key] = share.get(key, 0.0) + float(volume_delta)
