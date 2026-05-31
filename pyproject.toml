@@ -43,6 +43,7 @@ ignore = ["E501"]    # line-length is handled by formatter
 "src/data/program_filter.py" = ["PLR0913"]
 # torch.nn.functional as F is the universal PyTorch convention.
 "src/model/policy_net.py" = ["N812"]
+"src/model/actor_critic.py" = ["N812"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

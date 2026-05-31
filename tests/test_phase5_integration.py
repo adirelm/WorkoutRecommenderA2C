@@ -2,13 +2,12 @@
 
 import math
 
-from src.model.actor_critic import ActorCriticNet
-from src.services.a2c_trainer import A2CTrainer
-from src.services.comparator import compare
-
 from src.env.workout_env import WorkoutEnv
+from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
+from src.services.a2c_trainer import A2CTrainer
 from src.services.a2c_types import A2CConfig
+from src.services.comparator import compare
 from src.services.reinforce_trainer import REINFORCETrainer
 from src.services.types import REINFORCEConfig
 
