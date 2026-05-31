@@ -38,6 +38,7 @@ class RunningMeanBaseline:
 
     @property
     def alpha(self) -> float:
+        """EMA rate; alpha=0 disables the baseline (ablation lever)."""
         return self._alpha
 
     @property

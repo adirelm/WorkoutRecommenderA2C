@@ -1,0 +1,48 @@
+%% WorkoutRecommenderA2C — data-flow diagram (§1)
+%% Kaggle dataset → preprocessing → trajectory → LSTM training → REINFORCE/A2C → recommendation
+flowchart LR
+    %% --- ingestion ---
+    K[("Kaggle dataset<br/>600K Fitness &amp; Workout<br/>(one-time download)")]:::ext
+    KC["KaggleClient<br/>data/kaggle_client.py"]:::data
+    RAW[("data/raw/*.csv")]:::store
+
+    %% --- preprocessing ---
+    PP["Preprocessor<br/>data/preprocessor.py<br/>(filter chosen_program,<br/>negatives, time-encoded reps)"]:::data
+    AGG["DailyAggregator<br/>data/aggregator.py<br/>(rest-day insertion, §7.2.4)"]:::data
+    TRJ[("Synthetic trainee trajectory<br/>data/processed/*.parquet<br/>(volume_t, muscle_dist_t,<br/>duration_t, week_idx_t, day_t)")]:::store
+
+    %% --- world model ---
+    LSTM["LSTMWorldModel<br/>model/lstm_world.py<br/>P(s_{t+1} | s_t, a_t)"]:::model
+    TLSTM["TrainerLSTM<br/>services/trainer_lstm.py<br/>(supervised windows, MSE)"]:::svc
+    CKPT[("results/checkpoints/<br/>lstm.pt")]:::store
+
+    %% --- environment ---
+    ENV["WorkoutEnv<br/>env/workout_env.py<br/>reset/step over LSTM<br/>reward = gain − λ₁·overload − λ₂·imbalance"]:::env
+
+    %% --- policy learning ---
+    REIN["TrainerREINFORCE<br/>services/trainer_reinforce.py<br/>(reward-to-go + baseline, eq. 16)"]:::svc
+    A2C["TrainerA2C<br/>services/trainer_a2c.py<br/>(TD-advantage, eq. 17,<br/>actor + critic + entropy)"]:::svc
+    POL["PolicyNet (7-way softmax)"]:::model
+    AC["ActorCriticNet (shared trunk)"]:::model
+
+    %% --- recommendation ---
+    SDK["WorkoutSDK.recommend(state)<br/>+ ActionMaskService"]:::sdk
+    OUT["Recommendation<br/>{action, probs, value, masked}"]:::out
+
+    K --> KC --> RAW --> PP --> AGG --> TRJ
+    TRJ --> TLSTM --> LSTM --> CKPT
+    LSTM --> ENV
+    ENV --> REIN --> POL
+    ENV --> A2C  --> AC
+    POL --> SDK
+    AC  --> SDK
+    SDK --> OUT
+
+    classDef ext   fill:#fde9d9,stroke:#b06a00,color:#222;
+    classDef data  fill:#e8f0ff,stroke:#1f4fa8,color:#222;
+    classDef svc   fill:#e6f6ea,stroke:#1d7a3a,color:#222;
+    classDef model fill:#f3e6ff,stroke:#6a1fa8,color:#222;
+    classDef env   fill:#fff4cf,stroke:#a07a00,color:#222;
+    classDef sdk   fill:#ffe0e0,stroke:#a8281f,color:#222;
+    classDef store fill:#ececec,stroke:#555,color:#222;
+    classDef out   fill:#d9f7e8,stroke:#0a7a3a,color:#222;

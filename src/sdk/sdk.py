@@ -50,6 +50,7 @@ class WorkoutSDK:
 
     # ------------------------------------------------------------- trainers
     def train_reinforce(self, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory]:
+        """Train REINFORCE policy; returns (handle, per-episode history). Brief §7.4."""
         env = self._ensure_env()
         policy = PolicyNet(seed=self.seed)
         cfg = REINFORCEConfig(episodes=int(episodes))
@@ -60,6 +61,7 @@ class WorkoutSDK:
         return handle, history
 
     def train_a2c(self, episodes: int = 10) -> tuple[PolicyHandle, A2CHistory]:
+        """Train A2C actor-critic; returns (handle, per-episode history). Brief §7.5."""
         env = self._ensure_env()
         ac = ActorCriticNet(seed=self.seed)
         cfg = A2CConfig(episodes=int(episodes))
@@ -71,6 +73,7 @@ class WorkoutSDK:
 
     # ----------------------------------------------------------- comparison
     def compare(self, seeds: int = 3, episodes: int = 5) -> ComparisonResult:
+        """Run both REINFORCE + A2C over N seeds x E episodes, return mean ± std bands. Brief §7.6."""
         r_hists: list[REINFORCEHistory] = []
         a_hists: list[A2CHistory] = []
         a2c_nets: list[ActorCriticNet] = []
@@ -102,6 +105,7 @@ class WorkoutSDK:
         state: State,
         policy: PolicyHandle | None = None,
     ) -> WorkoutRecommendation:
+        """Next-day recommendation; uses the most-recently trained policy if none specified."""
         if policy is not None and policy is not self._last_policy_handle:
             raise ValueError("Only the most recently trained policy handle is supported.")
         if self._last_net is None or self._last_policy_handle is None:

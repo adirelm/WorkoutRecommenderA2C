@@ -86,6 +86,7 @@ class REINFORCETrainer:
 
     # -------------------------------------------------------------------- train
     def train(self, episodes: int | None = None) -> REINFORCEHistory:
+        """Episode loop with Adam + grad-clip; returns rewards/losses/baseline trace. Brief §7.4."""
         n_episodes = int(episodes) if episodes is not None else int(self.config.episodes)
         ep_rewards: list[float] = []
         ep_losses: list[float] = []

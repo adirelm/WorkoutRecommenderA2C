@@ -74,6 +74,7 @@ class A2CTrainer:
         return states, actions, rewards, log_probs, values, dones, entropies
 
     def train(self, episodes: int | None = None) -> A2CHistory:
+        """Episode loop with separate actor+critic Adams + TD-advantage; brief §7.5."""
         episodes = int(episodes if episodes is not None else self.config.episodes)
         rewards_hist: list[float] = []
         actor_losses: list[float] = []

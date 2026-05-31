@@ -49,6 +49,7 @@ class LSTMEnvAdapter:
 
     @property
     def history_len(self) -> int:
+        """Current size of the (state, action) history buffer."""
         return len(self._state_history)
 
     def next_state(

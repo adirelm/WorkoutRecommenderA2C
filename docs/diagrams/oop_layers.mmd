@@ -1,0 +1,63 @@
+%% WorkoutRecommenderA2C — OOP layering (§3)
+%% CLIMenu → WorkoutSDK → trainers → nets → env → world (synthetic OR LSTM-adapter)
+classDiagram
+    direction LR
+
+    class CLIMenu {
+      +run() void
+      -sdk: WorkoutSDK
+    }
+
+    class WorkoutSDK {
+      +prepare_data() Splits
+      +train_lstm(epochs) LossHistory
+      +train_reinforce(episodes) RewardHistory
+      +train_a2c(episodes) RewardHistory
+      +recommend(state) Recommendation
+      +save_brain(path) void
+      +load_brain(path) void
+    }
+
+    class REINFORCETrainer {
+      +fit(env, policy, episodes) RewardHistory
+      -compute_returns(rewards) Tensor
+    }
+    class A2CTrainer {
+      +fit(env, ac_net, episodes) RewardHistory
+      -compute_advantages(rewards, values) Tensor
+    }
+
+    class PolicyNet {
+      +forward(s) logits_7
+    }
+    class ActorCriticNet {
+      +forward(s) (logits_7, value)
+    }
+
+    class WorkoutEnv {
+      +reset(seed) State
+      +step(action) (State, float, bool, dict)
+      +action_space int = 7
+    }
+
+    class SyntheticTrainee {
+      +next_state(s, a) State
+    }
+    class LSTMEnvAdapter {
+      +next_state(s, a) State
+      -world: LSTMWorldModel
+    }
+    class LSTMWorldModel {
+      +forward(s, a, h) (s_next, h_next)
+    }
+
+    CLIMenu --> WorkoutSDK : depends on
+    WorkoutSDK --> REINFORCETrainer
+    WorkoutSDK --> A2CTrainer
+    REINFORCETrainer --> PolicyNet
+    A2CTrainer --> ActorCriticNet
+    REINFORCETrainer --> WorkoutEnv : rollouts
+    A2CTrainer       --> WorkoutEnv : rollouts
+    WorkoutEnv --> SyntheticTrainee : <<uses>>
+    WorkoutEnv --> LSTMEnvAdapter   : <<uses>>
+    LSTMEnvAdapter --> LSTMWorldModel

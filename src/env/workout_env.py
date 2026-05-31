@@ -94,6 +94,7 @@ class WorkoutEnv:
 
     # ----------------------------------------------------------------- core
     def reset(self, seed: int | None = None) -> State:
+        """Reset env to State.initial(); optionally re-seed."""
         if seed is not None:
             self._seed = int(seed)
         self._trainee = self._build_trainee()
@@ -105,6 +106,7 @@ class WorkoutEnv:
         return self._state
 
     def step(self, action_id: int) -> tuple[State, float, bool, dict]:
+        """Apply action_id; return (next_state, reward, done, info-with-reward-decomposition)."""
         if not 0 <= action_id < ACTION_COUNT:
             raise ValueError(f"action_id {action_id} out of range [0, {ACTION_COUNT})")
         prev_state = self._state
@@ -146,6 +148,7 @@ class WorkoutEnv:
 
     # --------------------------------------------------------------- masks
     def action_mask(self) -> np.ndarray:
+        """Current legal-action mask of shape (ACTION_COUNT,); per ADR-004 / Huang & Ontañón 2022."""
         return self._mask.copy()
 
     def history(self) -> list[int]:

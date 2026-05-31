@@ -10,6 +10,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class ComparisonResult:
+    """REINFORCE vs A2C aggregate metrics across seeds (mean ± std)."""
+
     reinforce_mean_reward: np.ndarray
     reinforce_std_reward: np.ndarray
     a2c_mean_reward: np.ndarray
@@ -25,6 +27,7 @@ def _stack(histories: list[Any]) -> np.ndarray:
 
 
 def compare(reinforce_histories: list[Any], a2c_histories: list[Any]) -> ComparisonResult:
+    """Stack per-seed REINFORCE + A2C histories and return mean/std reward bands."""
     if len(reinforce_histories) == 0 or len(a2c_histories) == 0:
         raise ValueError("histories must be non-empty")
     if len(reinforce_histories) != len(a2c_histories):

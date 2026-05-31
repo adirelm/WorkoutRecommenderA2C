@@ -85,4 +85,5 @@ class ActorCriticNet(nn.Module):
 
     @property
     def num_parameters(self) -> int:
+        """Total parameter count (trainable + frozen)."""
         return sum(p.numel() for p in self.parameters())

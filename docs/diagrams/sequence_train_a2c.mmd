@@ -1,0 +1,39 @@
+%% WorkoutRecommenderA2C — sequence: user picks "train-a2c" (§6, §7.5)
+%% Chain of calls: User → CLIMenu → SDK → A2CTrainer → run_episode loop
+sequenceDiagram
+    autonumber
+    actor User
+    participant CLI as CLIMenu
+    participant SDK as WorkoutSDK
+    participant T as A2CTrainer
+    participant Env as WorkoutEnv
+    participant AC as ActorCriticNet
+    participant Opt as optim.Adam
+
+    User->>CLI: select verb "train-a2c"
+    CLI->>SDK: train_a2c(episodes=N)
+    SDK->>T: fit(env, ac_net, episodes=N)
+
+    loop for each episode e in 1..N
+      T->>Env: reset(seed=e)
+      Env-->>T: s_0
+
+      loop run_episode (t = 0..T-1)
+        T->>AC: forward(s_t)
+        AC-->>T: (logits_7, V(s_t))
+        T->>T: sample a_t ~ softmax(masked logits)
+        T->>Env: step(a_t)
+        Env-->>T: (s_{t+1}, r_t, done, info)
+      end
+
+      T->>T: compute advantages A_t = r_t + γ·V(s_{t+1}) − V(s_t)
+      T->>T: actor_loss = −Σ log π(a_t|s_t)·A_t − β·H(π)
+      T->>T: critic_loss = Σ (V(s_t) − R_t)²
+      T->>AC: backward(actor_loss + critic_loss)
+      T->>Opt: step()
+      T->>Opt: zero_grad()
+      T-->>SDK: append episode_return
+    end
+
+    SDK-->>CLI: RewardHistory
+    CLI-->>User: render summary (mean, std, last-50 avg)

@@ -42,6 +42,7 @@ class State:
     weekly_progress: float  # [0, 1.2] capped
 
     def to_array(self) -> np.ndarray:
+        """Pack the 12 state channels into a float32 ndarray in STATE_CHANNEL_NAMES order."""
         return np.asarray(
             [
                 self.fatigue,

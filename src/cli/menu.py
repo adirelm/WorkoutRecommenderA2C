@@ -33,6 +33,7 @@ class CLIMenu:
         self.stdout = stdout if stdout is not None else sys.stdout
 
     def render_main_menu(self) -> str:
+        """Render the 7-line numbered menu (6 verbs + exit) as a string."""
         lines = ["", "=== WorkoutRecommenderA2C — Main Menu ==="]
         for key, verb, desc in _VERBS:
             lines.append(f"  {key}. {verb:<20s} — {desc}")

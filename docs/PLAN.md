@@ -65,6 +65,8 @@ notebook is a *consumer* of the SDK exactly like the CLI and GUI, so
 runtime gates (ruff, ≤150 LOC, ≥85% coverage) apply uniformly to
 `src/` while the notebook stays in `notebooks/`.
 
+> See also: per-aspect Mermaid files in [diagrams/](diagrams/) — data-flow, OOP-layers, and the train-a2c sequence walkthrough.
+
 **Action space.** Discrete, cardinality **7**:
 `{ 0:Rest, 1:Push, 2:Pull, 3:Legs, 4:FullBody, 5:Conditioning, 6:Mobility }`.
 The §7.6 action-masking guardrails act on this 7-vector (ADR-004).

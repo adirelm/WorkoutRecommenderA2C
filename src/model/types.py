@@ -52,4 +52,5 @@ class LSTMTrainHistory:
 
     @property
     def final_val_loss(self) -> float:
+        """Last-epoch validation MSE; NaN if val set was empty."""
         return self.val_loss[-1] if self.val_loss else float("nan")

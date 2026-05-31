@@ -63,6 +63,7 @@ class SyntheticTrainee:
         prescribed_volume: float = 0.0,
         prescribed_muscles: dict[str, float] | None = None,
     ) -> State:
+        """Stochastic state-evolution under prescribed daily plan. Phase-2 transition."""
         if action_id not in _ACTION_MUSCLES:
             raise ValueError(f"unknown action_id={action_id}")
         is_rest = action_id == 0
