@@ -6,7 +6,8 @@ then walks the resulting widget tree. Covers:
 * the "Load PHUL trainee" button renders on first paint,
 * clicking that button populates the ``gui.data.*`` session-state
   namespace (handle / trajectory / infos),
-* after load the ``metric_row`` exposes ``program_name='synthetic_trainee'``,
+* after load the ``metric_row`` exposes the pretty program name
+  ``'Synthetic Trainee'`` (from ``program_name='synthetic_trainee'``),
   ``n_days=28``, and ``state_dim=12`` (the LogbookHandle contract from
   :meth:`WorkoutSDK.prepare_data`),
 * the muscle-distribution heatmap appears as a ``plotly_chart`` element
@@ -84,7 +85,7 @@ def test_load_button_click_populates_session_state(loaded_app: AppTest) -> None:
 def test_metric_row_surfaces_logbook_handle(loaded_app: AppTest) -> None:
     """After load, the KPI row mirrors the LogbookHandle fields."""
     metrics = _metric_dict(loaded_app)
-    assert metrics.get("Program") == "synthetic_trainee"
+    assert metrics.get("Program") == "Synthetic Trainee"
     assert metrics.get("Episode length (days)") == "28"
     assert metrics.get("State dim (channels)") == "12"
 

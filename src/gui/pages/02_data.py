@@ -26,10 +26,11 @@ _KAGGLE_SLUG = "adnanelouardi/600k-fitness-exercise-and-workout-program-dataset"
 _KAGGLE_URL = f"https://www.kaggle.com/datasets/{_KAGGLE_SLUG}"
 _SECTION_BLURB = (
     "§7.2 — the data layer hydrates a Kaggle workout-program CSV "
-    "(filtered to a PHUL trainee) or falls back to the deterministic "
-    "<code>SyntheticTrainee</code>. Either source is replayed through "
-    "<code>WorkoutEnv</code> for 28 days, producing the state trajectory "
-    "the LSTM world-model and the REINFORCE/A2C policies all train on."
+    "(filtered to a Power Hypertrophy Upper Lower (PHUL) trainee) or "
+    "falls back to the deterministic <code>SyntheticTrainee</code>. Either "
+    "source is replayed through <code>WorkoutEnv</code> for 28 days, "
+    "producing the state trajectory the LSTM world-model and the "
+    "REINFORCE/A2C policies all train on."
 )
 
 
@@ -57,8 +58,9 @@ def _roll_trajectory(sdk: WorkoutSDK, days: int = 28) -> tuple[list[State], list
 
 def _handle_metrics(handle: LogbookHandle) -> dict[str, str]:
     """Map LogbookHandle into the metric_row signature."""
+    pretty = handle.program_name.replace("_", " ").title()
     return {
-        "Program": handle.program_name,
+        "Program": pretty,
         "Episode length (days)": str(handle.n_days),
         "State dim (channels)": str(handle.state_dim),
     }
@@ -68,7 +70,15 @@ def _load_section(state: GUIState, sdk: WorkoutSDK) -> LogbookHandle | None:
     """Render the load-button + trigger prepare_data(); persist handle."""
     cols = st.columns([1, 3])
     with cols[0]:
-        if st.button("Load PHUL trainee", type="primary", use_container_width=True):
+        if st.button(
+            "Load PHUL trainee",
+            type="primary",
+            use_container_width=True,
+            help=(
+                "Hydrate the Power Hypertrophy Upper Lower (PHUL) trainee "
+                "from Kaggle (or synthetic fallback if Kaggle unavailable)."
+            ),
+        ):
             handle = sdk.prepare_data()
             state.set("handle", handle)
             states, infos = _roll_trajectory(sdk, days=int(handle.n_days))
@@ -92,8 +102,9 @@ def _heatmap_section(trajectory: list[State]) -> None:
     fig = muscle_distribution_heatmap(trajectory)
     st.plotly_chart(fig, use_container_width=True)
     st.caption(
-        f"{len(trajectory)} daily state vectors x 12 channels. Darker = higher; "
-        f"this is the same data the LSTM world-model fits."
+        f"{len(trajectory)} state vectors (initial state + 28 daily "
+        f"transitions) × 12 channels. Darker = higher; this is the same "
+        f"data the LSTM world-model fits."
     )
 
 
@@ -105,11 +116,12 @@ def _reward_section(state: GUIState, infos: list[dict]) -> None:
         return
     default_day = int(state.get("sample_day", 1))
     day = st.slider(
-        "Day",
+        "Rollout day",
         min_value=1,
         max_value=len(infos),
         value=min(default_day, len(infos)),
         step=1,
+        help="Select which day of the 28-day rollout to inspect.",
     )
     state.set("sample_day", day)
     info = infos[day - 1]
@@ -122,7 +134,7 @@ def _reward_section(state: GUIState, infos: list[dict]) -> None:
     st.caption(
         f"Action on day {day}: **{info.get('muscle_group', '—')}** "
         f"(volume Δ = {info.get('volume_delta', 0.0):+.1f}). "
-        f"Total shaped reward = `gain - 2*overload - 1*imbalance`."
+        f"Total shaped reward = `gain − 2·overload − imbalance`."
     )
 
 
