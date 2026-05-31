@@ -12,6 +12,7 @@ import streamlit as st
 from src.env.action_mask import ActionMaskService
 from src.env.state import STATE_CHANNEL_NAMES, State
 from src.gui.components import info_card, reference_callout
+from src.gui.labels import STATE_CHANNEL_HELP, STATE_CHANNEL_LABEL
 
 _REST_ID = 0
 _LEGS_ID = 3
@@ -27,14 +28,14 @@ def info_block() -> None:
     """Render the §7.6.1 theory card + Huang & Ontañón citation + ADR link."""
     info_card(
         "Action masking (brief §7.6.1)",
-        "Invalid-action masking sets logits of illegal moves to <code>-inf</code> so "
+        "Invalid-action masking sets logits of illegal moves to <code>−∞</code> so "
         "<code>softmax</code> assigns them zero probability and the policy gradient "
         "ignores them. Four hard rules (rest-streak, legs-soreness, conditioning "
         "overload, mobility-always) encode trainer-safety constraints the network "
         "should never have to relearn from reward signal alone.",
     )
     reference_callout(
-        "Reference - Huang & Ontanon (2022)",
+        "Reference — Huang & Ontañón (2022)",
         "<em>A Closer Look at Invalid Action Masking in Policy Gradient Algorithms.</em> "
         "FLAIRS-35. Shows masking is equivalent to a state-dependent policy and that "
         "the unmasked logits' gradient is the correct estimator. "
@@ -45,22 +46,17 @@ def info_block() -> None:
 
 def slider_for(name: str, default: float, reset: bool) -> float:
     """Per-channel slider with the right range - falls back to State.initial() on reset."""
+    label = STATE_CHANNEL_LABEL.get(name, name)
+    help_text = STATE_CHANNEL_HELP.get(name)
     if name in _INT_CHANNELS:
-        return float(st.sidebar.slider(name, 0, 14, 0 if reset else int(default), 1))
+        return float(st.sidebar.slider(label, 0, 14, 0 if reset else int(default), 1, help=help_text))
     if name in _SIGNED_CHANNELS:
-        return st.sidebar.slider(name, -1.0, 1.0, 0.0 if reset else default, 0.05)
+        return st.sidebar.slider(label, -1.0, 1.0, 0.0 if reset else default, 0.05, help=help_text)
     if name == "rolling_7d_volume":
-        return st.sidebar.slider(
-            name,
-            0.0,
-            2.0,
-            0.0 if reset else default,
-            0.05,
-            help="Baseline-normalised ratio (1.0 = baseline volume).",
-        )
+        return st.sidebar.slider(label, 0.0, 2.0, 0.0 if reset else default, 0.05, help=help_text)
     hi = 1.2 if name == "weekly_progress" else 1.0
     base = (1.0 if name == "readiness" else 0.0) if reset else default
-    return st.sidebar.slider(name, 0.0, hi, base, 0.05)
+    return st.sidebar.slider(label, 0.0, hi, base, 0.05, help=help_text)
 
 
 def state_sliders() -> State:
@@ -80,12 +76,26 @@ def rule_toggles() -> dict[str, bool]:
     """Four mask-rule on/off toggles (rule disabled = threshold pushed out of reach)."""
     st.sidebar.header("Mask rules")
     return {
-        "rest_streak": st.sidebar.toggle("rest_streak (block Rest after K rests)", True),
-        "legs_soreness": st.sidebar.toggle("legs_soreness (block Legs if sore)", True),
-        "conditioning_overload": st.sidebar.toggle(
-            "conditioning_overload (block Conditioning over 1.2x baseline)", True
+        "rest_streak": st.sidebar.toggle(
+            "rest_streak (block Rest after K rests)",
+            True,
+            help="If the last 3 actions were all Rest, mask Rest (logit → −∞).",
         ),
-        "mobility_always": st.sidebar.toggle("mobility_always (Mobility never masked)", True),
+        "legs_soreness": st.sidebar.toggle(
+            "legs_soreness (block Legs if sore)",
+            True,
+            help="If soreness_legs > 0.8, mask the Legs action (logit → −∞).",
+        ),
+        "conditioning_overload": st.sidebar.toggle(
+            "conditioning_overload (block Conditioning over 1.2x baseline)",
+            True,
+            help="If rolling_7d_volume > 1.2 × baseline, mask Conditioning (logit → −∞).",
+        ),
+        "mobility_always": st.sidebar.toggle(
+            "mobility_always (Mobility never masked)",
+            True,
+            help="Mobility is always legal — a safe fallback action that is never masked.",
+        ),
     }
 
 
@@ -99,7 +109,7 @@ def build_service(t: dict[str, bool]) -> ActionMaskService:
 
 
 def softmax(logits: np.ndarray) -> tuple[float, ...]:
-    """Numerically stable softmax - masked (-inf) logits collapse to 0 cleanly."""
+    """Numerically stable softmax - masked (−∞) logits collapse to 0 cleanly."""
     finite = np.where(np.isfinite(logits), logits, -np.inf)
     shifted = finite - np.max(finite[np.isfinite(finite)], initial=0.0)
     exp = np.where(np.isfinite(shifted), np.exp(shifted), 0.0)

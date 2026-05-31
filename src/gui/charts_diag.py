@@ -35,10 +35,13 @@ def muscle_distribution_heatmap(trajectory: list[State]) -> go.Figure:
 
 
 def action_probability_bar(
-    probs: tuple[float, ...], action_names: list[str], mask: list[bool] | None = None
+    probs: tuple[float, ...],
+    action_names: list[str],
+    mask: list[bool] | None = None,
+    title: str = "Policy action probabilities",
 ) -> go.Figure:
     """Per-action probability bar; masked actions rendered in the warning colour."""
-    out = fig("Policy action probabilities")
+    out = fig(title)
     colors = [
         THEME.warning if (mask is not None and i < len(mask) and not mask[i]) else THEME.primary
         for i in range(len(probs))
