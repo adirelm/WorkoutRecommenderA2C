@@ -49,7 +49,7 @@ def test_sidebar_sliders_present_with_expected_ranges():
     lr = _slider_by_label(app, "Learning rate (Adam)")
     assert lr.min == pytest.approx(1e-4) and lr.max == pytest.approx(1e-2)
 
-    gamma = _slider_by_label(app, "Discount factor γ")
+    gamma = _slider_by_label(app, "Discount factor γ")  # noqa: RUF001
     assert gamma.min == pytest.approx(0.9) and gamma.max == pytest.approx(0.999)
 
     hidden = _slider_by_label(app, "Policy hidden units")

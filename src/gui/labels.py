@@ -3,6 +3,7 @@
 Pages MUST use these maps instead of raw snake_case field names so the GUI
 reads as a polished product rather than a code dump (V3 §10 + writing audit).
 """
+
 from __future__ import annotations
 
 # Mirrors src/env/state.STATE_CHANNEL_NAMES — keep in sync.

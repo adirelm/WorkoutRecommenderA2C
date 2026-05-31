@@ -39,7 +39,9 @@ def _sidebar_controls() -> dict[str, float | int]:
     sb = st.sidebar
     sb.header("LSTM Hyperparameters")
     hidden_size = sb.select_slider("Hidden size", options=list(_HIDDEN_OPTIONS), value=64, help=_HELP_HIDDEN)
-    num_layers = sb.select_slider("Number of layers", options=list(_LAYERS_OPTIONS), value=1, help=_HELP_LAYERS)
+    num_layers = sb.select_slider(
+        "Number of layers", options=list(_LAYERS_OPTIONS), value=1, help=_HELP_LAYERS
+    )
     epochs = sb.slider("Training epochs", min_value=5, max_value=200, value=15, step=5, help=_HELP_EPOCHS)
     lr = sb.select_slider(
         "Learning rate",
@@ -48,7 +50,9 @@ def _sidebar_controls() -> dict[str, float | int]:
         format_func=lambda v: f"{v:.0e}",
         help=_HELP_LR,
     )
-    window_len = sb.slider("Window length (days)", min_value=3, max_value=14, value=7, step=1, help=_HELP_WINDOW)
+    window_len = sb.slider(
+        "Window length (days)", min_value=3, max_value=14, value=7, step=1, help=_HELP_WINDOW
+    )
     return {
         "hidden_size": int(hidden_size),
         "num_layers": int(num_layers),

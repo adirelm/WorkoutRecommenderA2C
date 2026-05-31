@@ -58,9 +58,7 @@ def render() -> None:
     left, right = st.columns(2)
     with left:
         st.plotly_chart(
-            action_probability_bar(
-                unmasked_probs, list(ACTION_NAMES), title="Unmasked: softmax(logits)"
-            ),
+            action_probability_bar(unmasked_probs, list(ACTION_NAMES), title="Unmasked: softmax(logits)"),
             use_container_width=True,
             key="action_masking_unmasked_probs",
         )

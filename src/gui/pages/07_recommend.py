@@ -25,13 +25,18 @@ from src.gui.state import (
 )
 
 _BOUNDS: dict[str, tuple[float, float, float]] = {
-    "fatigue": (0.0, 1.0, 0.05), "soreness_push": (0.0, 1.0, 0.05),
-    "soreness_pull": (0.0, 1.0, 0.05), "soreness_legs": (0.0, 1.0, 0.05),
-    "soreness_core": (0.0, 1.0, 0.05), "readiness": (0.0, 1.0, 0.05),
-    "rolling_7d_volume": (0.0, 200.0, 1.0), "streak_days_trained": (0.0, 30.0, 1.0),
+    "fatigue": (0.0, 1.0, 0.05),
+    "soreness_push": (0.0, 1.0, 0.05),
+    "soreness_pull": (0.0, 1.0, 0.05),
+    "soreness_legs": (0.0, 1.0, 0.05),
+    "soreness_core": (0.0, 1.0, 0.05),
+    "readiness": (0.0, 1.0, 0.05),
+    "rolling_7d_volume": (0.0, 200.0, 1.0),
+    "streak_days_trained": (0.0, 30.0, 1.0),
     "days_since_last_rest": (0.0, 14.0, 1.0),
     "muscle_balance_push_vs_pull": (-1.0, 1.0, 0.05),
-    "adherence_signal": (-1.0, 1.0, 0.05), "weekly_progress": (0.0, 1.2, 0.05),
+    "adherence_signal": (-1.0, 1.0, 0.05),
+    "weekly_progress": (0.0, 1.2, 0.05),
 }
 _INT_CHANNELS: frozenset[str] = frozenset({"streak_days_trained", "days_since_last_rest"})
 _RESET_TOGGLE = "Reset to fresh trainee defaults (Use State.initial())"
@@ -57,8 +62,12 @@ def _state_from_sliders(use_initial: bool) -> State:
     for f in fields(State):
         lo, hi, step = _BOUNDS[f.name]
         v = st.sidebar.slider(
-            STATE_CHANNEL_LABEL[f.name], lo, hi, float(getattr(base, f.name)),
-            step, help=STATE_CHANNEL_HELP[f.name],
+            STATE_CHANNEL_LABEL[f.name],
+            lo,
+            hi,
+            float(getattr(base, f.name)),
+            step,
+            help=STATE_CHANNEL_HELP[f.name],
         )
         values[f.name] = int(v) if f.name in _INT_CHANNELS else float(v)
     return State(**values)
@@ -126,7 +135,8 @@ def render() -> None:
         return
     st.sidebar.header("State input")
     use_initial = st.sidebar.toggle(
-        _RESET_TOGGLE, value=True,
+        _RESET_TOGGLE,
+        value=True,
         help="On = use the fresh-trainee default state. Off = dial each channel by hand.",
     )
     st.sidebar.caption(f"Active policy (auto-detected): **{algo}**")
@@ -142,7 +152,9 @@ def render() -> None:
         env = WorkoutEnv(seed=42)
         env.reset()
         _render_result(rec, [bool(m) for m in env.action_mask().tolist()])
-        if st.button("Apply this action", help="Step the env with the recommended action and show next state."):
+        if st.button(
+            "Apply this action", help="Step the env with the recommended action and show next state."
+        ):
             _apply_action(rec.action_id, gui)
         nxt = gui.get("last_next_state")
         if nxt is not None:

@@ -108,10 +108,7 @@ def render() -> None:
         f"Run comparison ({seeds} seeds × {episodes} episodes)",
         type="primary",
         use_container_width=True,
-        help=(
-            "Train both REINFORCE and A2C across N seeds × E episodes, "
-            "plot mean ± 1σ reward bands."
-        ),
+        help=("Train both REINFORCE and A2C across N seeds × E episodes, plot mean ± 1σ reward bands."),
     ):
         with st.spinner("Running paired REINFORCE + A2C training…"):
             result = _run_comparison(seeds, episodes)

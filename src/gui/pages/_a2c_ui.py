@@ -16,7 +16,11 @@ def sidebar() -> dict[str, float | int]:
     sb = st.sidebar
     sb.header("A2C hyperparameters")
     episodes = sb.slider(
-        "Training episodes", 5, 200, 50, 5,
+        "Training episodes",
+        5,
+        200,
+        50,
+        5,
         help="Synchronous A2C updates (one per episode).",
     )
     actor_hidden = sb.select_slider(
@@ -32,26 +36,48 @@ def sidebar() -> dict[str, float | int]:
         help="Hidden units in the critic head.",
     )
     actor_lr = sb.slider(
-        "Actor learning rate", 1e-4, 1e-2, 3e-4, 1e-4, format="%.4f",
+        "Actor learning rate",
+        1e-4,
+        1e-2,
+        3e-4,
+        1e-4,
+        format="%.4f",
         help="Adam step size for the actor parameters.",
     )
     critic_lr = sb.slider(
-        "Critic learning rate", 1e-4, 1e-2, 1e-3, 1e-4, format="%.4f",
+        "Critic learning rate",
+        1e-4,
+        1e-2,
+        1e-3,
+        1e-4,
+        format="%.4f",
         help="Adam step size for the critic parameters.",
     )
     entropy_coef = sb.slider(
         "Entropy bonus coefficient β",
-        0.0, 0.1, 0.01, 0.005, format="%.3f",
+        0.0,
+        0.1,
+        0.01,
+        0.005,
+        format="%.3f",
         help="Weight on H(π) in the actor loss (eq. 17 entropy regularizer).",
     )
     grad_clip_norm = sb.slider(
         "Gradient clip",
-        0.1, 2.0, 0.5, 0.1, format="%.1f",
+        0.1,
+        2.0,
+        0.5,
+        0.1,
+        format="%.1f",
         help="Global L2-norm clip applied before each optimizer step.",
     )
     gamma = sb.slider(
         "Discount factor γ",
-        0.9, 0.999, 0.99, 0.001, format="%.3f",
+        0.9,
+        0.999,
+        0.99,
+        0.001,
+        format="%.3f",
         help="Reward discount in the TD target r_t + γ V(s_{t+1}).",
     )
     return {

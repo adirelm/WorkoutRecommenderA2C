@@ -57,7 +57,8 @@ def test_use_state_initial_toggle_is_on_by_default(recommend_app: AppTest) -> No
     first move 12 sliders before they can call ``sdk.recommend``.
     """
     toggles = [
-        t for t in recommend_app.sidebar.toggle
+        t
+        for t in recommend_app.sidebar.toggle
         if "fresh trainee defaults" in t.label or "State.initial" in t.label
     ]
     assert toggles, (
