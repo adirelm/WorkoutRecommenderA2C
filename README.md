@@ -401,3 +401,14 @@ The numeric self-grade claim against the rubric lives on the Moodle cover
 sheet only — not in this README, on principle (over-confidence lesson
 inherited from Assignment 1's post-mortem in
 `instructions/assignment-3/lecturer_feedback.md`).
+
+---
+
+## Submission & repository
+
+- **Repository**: https://github.com/adirelm/WorkoutRecommenderA2C (public)
+- **Branch**: `main`
+- **Latest tag**: `v1.1.1` (CI green)
+- **CI**: see [.github/workflows/ci.yml](.github/workflows/ci.yml) — runs ruff lint+format, file-size guard, pytest with ≥85% coverage gate
+- **Self-grade**: see Moodle cover sheet (not committed — contains PII)
+- **Lecturer access**: `rmisegal` added as read-only collaborator
