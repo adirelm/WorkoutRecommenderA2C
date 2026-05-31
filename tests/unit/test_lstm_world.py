@@ -25,14 +25,8 @@ def test_forward_output_shape():
 
 
 def test_forward_one_hot_action_concat():
-    """Verify the model accepts integer action indices, produces correct shape,
-    AND that the action actually influences the prediction.
-
-    Internally the action ids are embedded and concatenated with the state vector
-    before the LSTM. A mutant that drops the action (e.g., feeds only state_seq)
-    would yield identical outputs for any two action ids on the same state — so
-    we assert different actions on identical states yield DIFFERENT predictions.
-    """
+    """Action ids must influence output (mutation-killer: same state, different
+    actions → different predictions, proving action signal is not dropped)."""
     torch.manual_seed(0)
     model = LSTMWorldModel(hidden_size=32, num_layers=2)
     state_seq, action_seq = _make_inputs(batch=4, seq=5)
@@ -153,21 +147,12 @@ def test_forward_rejects_non_finite_state_seq():
 
 
 def test_lstm_respects_48h_muscle_recovery():
-    """Brief §7.3 — 48-hour muscle-group recovery must be respected.
-
-    The LSTM is a learned black-box, so we cannot assert exact recovery
-    dynamics on an untrained net. The 48-hour rule is encoded in this
-    codebase via the ``soreness_<group>`` channel: when ``soreness_legs >
-    0.8`` (= "trained recently, not yet recovered"), the env-layer
-    ActionMaskService MUST mask the Legs action. We assert:
-      1. The LSTM accepts an under-recovered scenario without error.
-      2. The env layer that CONSUMES the LSTM (ActionMaskService) refuses
-         Legs when soreness_legs is above the recovery threshold, and
-         permits it once soreness has decayed below threshold.
-    Together (1)+(2) prove the 48-hour rule is honored at the env layer.
-    """
+    """Brief §7.3 — 48-hour recovery is encoded via ``soreness_<group>``:
+    when ``soreness_legs > 0.8`` the env-layer ActionMaskService MUST mask
+    Legs. We assert (1) the LSTM accepts the under-recovered scenario, and
+    (2) the env-layer mask refuses Legs above threshold and permits it
+    once soreness decays below it — proving the rule holds at the env layer."""
     legs_id = ACTION_NAMES.index("Legs")
-    # (1) LSTM accepts the under-recovered-legs scenario without crashing.
     model = LSTMWorldModel(hidden_size=32, num_layers=1, seed=0)
     model.freeze()
     under_recovered = State(
@@ -188,12 +173,10 @@ def test_lstm_respects_48h_muscle_recovery():
     a_t = torch.full((1, 1), legs_id, dtype=torch.long)
     pred = model(s_t, a_t)
     assert pred.shape == (1, STATE_DIM) and torch.isfinite(pred).all()
-    # (2) Env-layer mask blocks Legs while soreness_legs > 0.8 …
     mask_svc = ActionMaskService(legs_soreness_threshold=0.8)
     assert bool(mask_svc.mask(under_recovered, history=[])[legs_id]) is False, (
         "Legs must be masked when soreness_legs > 0.8 (48h recovery, brief §7.3)"
     )
-    # … and permits Legs once soreness has decayed below threshold.
     recovered = State(**{**under_recovered.__dict__, "soreness_legs": 0.2})
     assert bool(mask_svc.mask(recovered, history=[])[legs_id]) is True, (
         "Legs must be permitted once soreness_legs decays below threshold"
