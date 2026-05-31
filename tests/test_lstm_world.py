@@ -112,3 +112,39 @@ def test_gradient_flows_when_not_frozen():
     assert any(g.abs().sum().item() > 0.0 for g in grads), (
         "all gradients are zero — autograd graph appears detached"
     )
+
+
+def test_constructor_seed_kwarg_is_deterministic():
+    """Covers line 46 — torch.manual_seed(int(seed)) inside __init__."""
+    m1 = LSTMWorldModel(hidden_size=32, num_layers=1, seed=123)
+    m2 = LSTMWorldModel(hidden_size=32, num_layers=1, seed=123)
+    sd1, sd2 = m1.state_dict(), m2.state_dict()
+    for k in sd1:
+        torch.testing.assert_close(sd1[k], sd2[k])
+
+
+def test_forward_rejects_wrong_state_seq_shape():
+    """Covers line 70 — ValueError on state_seq with wrong ndim or last-dim."""
+    model = LSTMWorldModel()
+    bad_state = torch.zeros((4, 5), dtype=torch.float32)  # ndim=2, not 3
+    good_action = torch.zeros((4, 5), dtype=torch.int64)
+    with pytest.raises(ValueError, match="state_seq must be"):
+        model(bad_state, good_action)
+
+
+def test_forward_rejects_wrong_action_seq_shape():
+    """Covers line 72 — ValueError on action_seq shape mismatch."""
+    model = LSTMWorldModel()
+    good_state, _ = _make_inputs(batch=4, seq=5)
+    bad_action = torch.zeros((4, 99), dtype=torch.int64)  # seq dim mismatch
+    with pytest.raises(ValueError, match="action_seq must be"):
+        model(good_state, bad_action)
+
+
+def test_forward_rejects_non_finite_state_seq():
+    """Covers line 76 — ValueError on NaN/Inf in state_seq."""
+    model = LSTMWorldModel()
+    state_seq, action_seq = _make_inputs(batch=2, seq=3)
+    state_seq[0, 0, 0] = float("nan")
+    with pytest.raises(ValueError, match="non-finite"):
+        model(state_seq, action_seq)

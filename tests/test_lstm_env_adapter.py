@@ -114,3 +114,30 @@ def test_seeded_lstm_gives_deterministic_outputs() -> None:
         assert s_a.to_array().tolist() == s_b.to_array().tolist(), (
             f"determinism broke at step {step}: {s_a.to_array().tolist()} vs {s_b.to_array().tolist()}"
         )
+
+
+def test_init_rejects_non_positive_window_len():
+    """Covers lstm_env_adapter.py line 31 — ValueError on window_len <= 0."""
+    model = LSTMWorldModel()
+    model.freeze()
+    with pytest.raises(ValueError, match="window_len must be positive"):
+        LSTMEnvAdapter(model, window_len=0)
+
+
+def test_init_rejects_unfrozen_model():
+    """Covers __init__ frozen-check (fail-fast at construction)."""
+    model = LSTMWorldModel()  # not frozen
+    with pytest.raises(RuntimeError, match="freeze"):
+        LSTMEnvAdapter(model, window_len=7)
+
+
+def test_next_state_rejects_action_id_out_of_range():
+    """Covers line 70 — ValueError on action_id outside [0, ACTION_COUNT)."""
+    model = LSTMWorldModel()
+    model.freeze()
+    adapter = LSTMEnvAdapter(model, window_len=7)
+    adapter.reset(State.initial())
+    with pytest.raises(ValueError, match="action_id"):
+        adapter.next_state(State.initial(), action_id=99)
+    with pytest.raises(ValueError, match="action_id"):
+        adapter.next_state(State.initial(), action_id=-1)
