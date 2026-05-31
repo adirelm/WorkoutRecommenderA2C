@@ -21,7 +21,7 @@ def _sidebar_controls(state: GUIState) -> tuple[int, int]:
         max_value=10,
         value=int(state.get("seeds", 3)),
         step=1,
-        help="How many independent random seeds to average over.",
+        help="Number of independent random seeds (variance reduction).",
     )
     episodes = st.sidebar.slider(
         "Episodes per seed",
@@ -29,7 +29,7 @@ def _sidebar_controls(state: GUIState) -> tuple[int, int]:
         max_value=100,
         value=int(state.get("episodes", 20)),
         step=5,
-        help="Per-seed training length. More episodes = smoother bands.",
+        help="Training episodes per seed.",
     )
     state.set("seeds", seeds)
     state.set("episodes", episodes)
@@ -39,9 +39,9 @@ def _sidebar_controls(state: GUIState) -> tuple[int, int]:
 def _run_comparison(seeds: int, episodes: int) -> ComparisonResult:
     """Drive sdk.compare with a deterministic progress bar (one tick per seed)."""
     sdk = get_sdk()
-    bar = st.progress(0.0, text=f"Training {seeds} seed(s) x {episodes} episodes...")
+    bar = st.progress(0.0, text=f"Training {seeds} seed(s) × {episodes} episodes…")
     # The SDK runs the inner loop; we surface coarse progress before/after.
-    bar.progress(0.05, text=f"Starting {seeds} seed(s)...")
+    bar.progress(0.05, text=f"Starting {seeds} seed(s)…")
     result = sdk.compare(seeds=seeds, episodes=episodes)
     bar.progress(1.0, text="Comparison complete.")
     return result
@@ -76,11 +76,12 @@ def _render_result(result: ComparisonResult) -> None:
 
     reference_callout(
         "Caveat — single-seed-count study",
-        "This is a *single-seed-count study*: increasing the seed slider gives a "
-        "tighter band but does **not** turn the gap into a statistically "
-        "conclusive A2C-beats-REINFORCE (or vice-versa) result. Treat the "
-        "ordering as *suggestive*, not significant — formal claims would need a "
-        "paired bootstrap or Welch's t-test across many more seeds.",
+        "This is a <i>single-seed-count study</i>: increasing the seed slider "
+        "gives a tighter band but does <b>not</b> turn the gap into a "
+        "statistically conclusive A2C-beats-REINFORCE (or vice-versa) result. "
+        "Treat the ordering as <i>suggestive</i>, not significant — formal "
+        "claims would need a paired bootstrap or Welch's t-test across many "
+        "more seeds.",
     )
 
 
@@ -104,11 +105,15 @@ def render() -> None:
     seeds, episodes = _sidebar_controls(state)
 
     if st.button(
-        f"Run comparison ({seeds} seeds x {episodes} episodes)",
+        f"Run comparison ({seeds} seeds × {episodes} episodes)",
         type="primary",
         use_container_width=True,
+        help=(
+            "Train both REINFORCE and A2C across N seeds × E episodes, "
+            "plot mean ± 1σ reward bands."
+        ),
     ):
-        with st.spinner("Running paired REINFORCE + A2C training..."):
+        with st.spinner("Running paired REINFORCE + A2C training…"):
             result = _run_comparison(seeds, episodes)
         state.set("last_result", result)
 
