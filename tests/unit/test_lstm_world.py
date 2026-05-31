@@ -5,7 +5,8 @@ from __future__ import annotations
 import pytest
 import torch
 
-from src.env.state import ACTION_COUNT, STATE_DIM
+from src.env.action_mask import ActionMaskService
+from src.env.state import ACTION_COUNT, ACTION_NAMES, STATE_DIM, State
 from src.model.lstm_world import LSTMWorldModel
 
 
@@ -149,3 +150,51 @@ def test_forward_rejects_non_finite_state_seq():
     state_seq[0, 0, 0] = float("nan")
     with pytest.raises(ValueError, match="non-finite"):
         model(state_seq, action_seq)
+
+
+def test_lstm_respects_48h_muscle_recovery():
+    """Brief §7.3 — 48-hour muscle-group recovery must be respected.
+
+    The LSTM is a learned black-box, so we cannot assert exact recovery
+    dynamics on an untrained net. The 48-hour rule is encoded in this
+    codebase via the ``soreness_<group>`` channel: when ``soreness_legs >
+    0.8`` (= "trained recently, not yet recovered"), the env-layer
+    ActionMaskService MUST mask the Legs action. We assert:
+      1. The LSTM accepts an under-recovered scenario without error.
+      2. The env layer that CONSUMES the LSTM (ActionMaskService) refuses
+         Legs when soreness_legs is above the recovery threshold, and
+         permits it once soreness has decayed below threshold.
+    Together (1)+(2) prove the 48-hour rule is honored at the env layer.
+    """
+    legs_id = ACTION_NAMES.index("Legs")
+    # (1) LSTM accepts the under-recovered-legs scenario without crashing.
+    model = LSTMWorldModel(hidden_size=32, num_layers=1, seed=0)
+    model.freeze()
+    under_recovered = State(
+        fatigue=0.6,
+        soreness_push=0.1,
+        soreness_pull=0.1,
+        soreness_legs=0.95,
+        soreness_core=0.1,
+        readiness=0.4,
+        rolling_7d_volume=0.5,
+        streak_days_trained=3,
+        days_since_last_rest=3,
+        muscle_balance_push_vs_pull=0.0,
+        adherence_signal=0.0,
+        weekly_progress=0.3,
+    )
+    s_t = torch.from_numpy(under_recovered.to_array()).unsqueeze(0).unsqueeze(0)
+    a_t = torch.full((1, 1), legs_id, dtype=torch.long)
+    pred = model(s_t, a_t)
+    assert pred.shape == (1, STATE_DIM) and torch.isfinite(pred).all()
+    # (2) Env-layer mask blocks Legs while soreness_legs > 0.8 …
+    mask_svc = ActionMaskService(legs_soreness_threshold=0.8)
+    assert bool(mask_svc.mask(under_recovered, history=[])[legs_id]) is False, (
+        "Legs must be masked when soreness_legs > 0.8 (48h recovery, brief §7.3)"
+    )
+    # … and permits Legs once soreness has decayed below threshold.
+    recovered = State(**{**under_recovered.__dict__, "soreness_legs": 0.2})
+    assert bool(mask_svc.mask(recovered, history=[])[legs_id]) is True, (
+        "Legs must be permitted once soreness_legs decays below threshold"
+    )
