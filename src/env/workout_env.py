@@ -15,29 +15,14 @@ from src.env.action_mask import ActionMaskService
 from src.env.reward import RewardConfig, RewardFunction
 from src.env.state import ACTION_COUNT, STATE_DIM, State
 from src.env.synthetic_trainee import SyntheticTrainee
-
-# Per-action (prescribed volume, dominant muscle bucket) for share tracking.
-_ACTIONS: tuple[tuple[float, str], ...] = (
-    (0.0, "rest"),
-    (10.0, "push"),
-    (10.0, "pull"),
-    (12.0, "legs"),
-    (14.0, "full"),
-    (6.0, "cardio"),
-    (4.0, "mobility"),
+from src.env.workout_env_helpers import (
+    ACTION_GROUP,
+    ACTION_VOLUME,
+    build_step_info,
+    normalised_share,
+    update_muscle_share,
+    zero_share,
 )
-_ACTION_VOLUME: dict[int, float] = {i: v for i, (v, _) in enumerate(_ACTIONS)}
-_ACTION_GROUP: dict[int, str] = {i: g for i, (_, g) in enumerate(_ACTIONS)}
-_GROUP_TO_SHARE_KEY: dict[str, str] = {
-    "push": "push",
-    "pull": "pull",
-    "legs": "legs",
-    "core": "core",
-    "full": "push",
-    "cardio": "core",
-    "mobility": "core",
-    "rest": "core",
-}
 
 
 @dataclass(frozen=True)
@@ -81,7 +66,7 @@ class WorkoutEnv:
         self._step_count: int = 0
         self._history: list[int] = []
         self._mask: np.ndarray = self._mask_service.mask(self._state, self._history)
-        self._muscle_volume_14d: dict[str, float] = self._zero_share()
+        self._muscle_volume_14d: dict[str, float] = zero_share()
 
     # ----------------------------------------------------------------- props
     @property
@@ -101,7 +86,7 @@ class WorkoutEnv:
         self._state = State.initial()
         self._step_count = 0
         self._history = []
-        self._muscle_volume_14d = self._zero_share()
+        self._muscle_volume_14d = zero_share()
         self._mask = self._mask_service.mask(self._state, self._history)
         return self._state
 
@@ -110,15 +95,15 @@ class WorkoutEnv:
         if not 0 <= action_id < ACTION_COUNT:
             raise ValueError(f"action_id {action_id} out of range [0, {ACTION_COUNT})")
         prev_state = self._state
-        volume_delta = _ACTION_VOLUME[action_id]
-        group = _ACTION_GROUP[action_id]
+        volume_delta = ACTION_VOLUME[action_id]
+        group = ACTION_GROUP[action_id]
         next_state = self._trainee.next_state(
             prev_state,
             action_id=action_id,
             prescribed_volume=volume_delta,
         )
-        self._update_muscle_share(group, volume_delta)
-        share_norm = self._normalised_share()
+        update_muscle_share(self._muscle_volume_14d, group, volume_delta)
+        share_norm = normalised_share(self._muscle_volume_14d)
         target_share = {k: v for k, v in self.cfg.target_muscle_dist if k in share_norm}
         decomp = self._reward_fn.compute(
             state=prev_state,
@@ -134,16 +119,7 @@ class WorkoutEnv:
         self._history.append(int(action_id))
         self._mask = self._mask_service.mask(self._state, self._history)
         done = self._step_count >= self.cfg.episode_length
-        info = {
-            "gain": decomp["gain"],
-            "overload": decomp["overload"],
-            "imbalance": decomp["imbalance"],
-            "progress": decomp.get("progress", 0.0),
-            "variety": decomp.get("variety", 0.0),
-            "volume_delta": float(volume_delta),
-            "muscle_group": group,
-            "step": self._step_count,
-        }
+        info = build_step_info(decomp, volume_delta, group, self._step_count)
         return next_state, float(decomp["reward"]), done, info
 
     # --------------------------------------------------------------- masks
@@ -159,17 +135,3 @@ class WorkoutEnv:
         if self._injected_trainee is not None:
             return self._injected_trainee
         return SyntheticTrainee(rng=np.random.default_rng(self._seed))
-
-    @staticmethod
-    def _zero_share() -> dict[str, float]:
-        return {"push": 0.0, "pull": 0.0, "legs": 0.0, "core": 0.0}
-
-    def _update_muscle_share(self, group: str, volume_delta: float) -> None:
-        key = _GROUP_TO_SHARE_KEY.get(group, "core")
-        self._muscle_volume_14d[key] = self._muscle_volume_14d.get(key, 0.0) + float(volume_delta)
-
-    def _normalised_share(self) -> dict[str, float]:
-        total = sum(self._muscle_volume_14d.values())
-        if total <= 0:
-            return dict.fromkeys(self._muscle_volume_14d, 0.25)
-        return {k: v / total for k, v in self._muscle_volume_14d.items()}
