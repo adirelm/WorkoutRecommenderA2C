@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.gui.callbacks import train_reinforce_live
+from src.gui.callbacks import LiveTrainingCallback, train_reinforce_live
 from src.gui.charts import reward_curve
 from src.gui.components import hero, metric_row
 from src.gui.pages._reinforce_ui import info_block, sidebar
@@ -31,35 +31,36 @@ def _run_training(params: dict[str, float | int | bool]) -> None:
     chart_slot = st.empty()
     progress_slot = st.empty() if params["show_progress"] else None
     rewards_stream: list[float] = []
+    total = int(params["episodes"])
 
-    def _on_episode(ep: int, total_reward: float) -> None:
-        rewards_stream.append(float(total_reward))
+    def _on_step(step_idx: int, metrics: dict) -> None:
+        rewards_stream.append(float(metrics.get("reward", 0.0)))
         if params["show_progress"]:
             chart_slot.plotly_chart(
                 reward_curve(tuple(rewards_stream), title="Live REINFORCE reward"),
                 use_container_width=True,
+                key=f"reinforce_live_chart_step_{step_idx}",
             )
             if progress_slot is not None:
                 progress_slot.progress(
-                    ep / int(params["episodes"]),
-                    text=f"episode {ep}/{int(params['episodes'])}",
+                    (step_idx + 1) / max(total, 1),
+                    text=f"episode {step_idx + 1}/{total}",
                 )
+
+    def _on_done(final) -> None:
+        chart_slot.plotly_chart(
+            reward_curve(final.rewards, title="REINFORCE episode reward"),
+            use_container_width=True,
+            key="reinforce_live_chart_done",
+        )
+        if progress_slot is not None:
+            progress_slot.empty()
 
     history = train_reinforce_live(
         sdk,
-        episodes=int(params["episodes"]),
-        policy_hidden=int(params["policy_hidden"]),
-        lr=float(params["lr"]),
-        baseline_alpha=float(params["baseline_alpha"]),
-        gamma=float(params["gamma"]),
-        on_episode=_on_episode,
+        episodes=total,
+        callback=LiveTrainingCallback(on_step=_on_step, on_done=_on_done),
     )
-    chart_slot.plotly_chart(
-        reward_curve(history.rewards, title="REINFORCE episode reward"),
-        use_container_width=True,
-    )
-    if progress_slot is not None:
-        progress_slot.empty()
     set_last_reinforce_history(history)
     GUIState(PAGE).set("last_history", history)
 

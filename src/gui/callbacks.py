@@ -36,9 +36,10 @@ def streamlit_progress_callback(total: int, chart_placeholder, progress_placehol
     def _on_step(step_idx: int, metrics: dict) -> None:
         for key, value in metrics.items():
             try:
-                series.setdefault(key, []).append(float(value))
+                numeric = float(value)
             except (TypeError, ValueError):
                 continue
+            series.setdefault(key, []).append(numeric)
         progress_placeholder.progress(min(1.0, (step_idx + 1) / total), text=f"step {step_idx + 1} / {total}")
         if series:
             chart_placeholder.line_chart(series)

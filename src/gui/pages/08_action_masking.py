@@ -27,6 +27,13 @@ from src.gui.pages._action_masking_ui import (
 
 _RNG_SEED = 7
 
+# Back-compat re-exports — test_gui_page_action_masking.py loads this file by path
+# (not import) and reaches for ``page._build_service`` / ``page._softmax``. The
+# helpers themselves live in ``_action_masking_ui`` now, but the public names
+# stay attached to the page module so the tests keep working unchanged.
+_build_service = build_service
+_softmax = softmax
+
 
 def render() -> None:
     """Entry point invoked by ``st.navigation`` for the action-masking page."""

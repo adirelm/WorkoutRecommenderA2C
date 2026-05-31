@@ -62,7 +62,14 @@ ignore = ["E501"]    # line-length is handled by formatter
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --strict-config"
+# ``slow`` is an opt-in marker for the multi-page Streamlit e2e flow
+# (boots all 7 pages back-to-back through AppTest). Deselected by default
+# to keep the default ``pytest`` invocation fast; CI runs the slow tier
+# with ``-m slow``. See tests/test_gui_e2e_flow.py.
+addopts = "--strict-markers --strict-config -m 'not slow'"
+markers = [
+    "slow: end-to-end multi-page Streamlit AppTest flow (opt-in; ~30s+)",
+]
 
 [tool.coverage.run]
 source = ["src"]

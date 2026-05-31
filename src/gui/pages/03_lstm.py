@@ -15,7 +15,7 @@ import streamlit as st
 from src.gui import charts
 from src.gui.components import hero, info_card, latex_block, metric_row, page_footer
 from src.gui.data_helpers import get_initial_trajectory
-from src.gui.state import GUIState, set_last_world_model_history
+from src.gui.state import GUIState, get_sdk, set_last_world_model_history
 from src.model.dataset import build_windows, split_train_val
 from src.model.lstm_trainer import LSTMTrainer
 from src.model.lstm_world import LSTMWorldModel
@@ -81,7 +81,7 @@ def _train_live(trainer: LSTMTrainer, train_w, val_w, epochs: int) -> LSTMTrainH
 
 def _run_training(state: GUIState, params: dict[str, float | int]) -> None:
     """Build dataset + model, then drive the live training loop."""
-    trajectory = get_initial_trajectory()
+    trajectory = get_initial_trajectory(get_sdk())
     windows = build_windows(trajectory, window_len=int(params["window_len"]))
     train_w, val_w = split_train_val(windows, val_days=7)
     if not train_w or not val_w:

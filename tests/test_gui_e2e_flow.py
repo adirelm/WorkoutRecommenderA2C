@@ -32,6 +32,14 @@ def _forward(at: AppTest) -> dict[str, Any]:
     return {k: at.session_state[k] for k in at.session_state.filtered_state}
 
 
+def _state_get(at: AppTest, key: str) -> Any:
+    """``session_state.get(...)``-style accessor (AppTest's session_state has no ``.get``)."""
+    try:
+        return at.session_state[key]
+    except (KeyError, AttributeError):
+        return None
+
+
 def _click_first(at: AppTest, label_fragment: str) -> AppTest:
     """Click the first button whose label contains ``label_fragment``."""
     for btn in at.button:
@@ -61,7 +69,7 @@ def test_full_user_journey_preserves_session_state() -> None:
     data = _run("02_data.py", prior=carry)
     assert not data.exception, f"data crashed: {data.exception}"
     data = _click_first(data, "Load PHUL trainee")
-    assert data.session_state.get("gui.data.handle") is not None, (
+    assert _state_get(data, "gui.data.handle") is not None, (
         "data page did not persist LogbookHandle to gui.data.handle"
     )
     carry = _forward(data)
@@ -72,7 +80,7 @@ def test_full_user_journey_preserves_session_state() -> None:
     _set_slider(lstm, "epochs", 5)  # min permitted by sidebar; smallest available
     lstm = lstm.run()
     lstm = _click_first(lstm, "Train LSTM")
-    assert lstm.session_state.get("gui.lstm.history") is not None, "LSTM history missing after training"
+    assert _state_get(lstm, "gui.lstm.history") is not None, "LSTM history missing after training"
     carry = _forward(lstm)
 
     # 4. REINFORCE — episodes=5 (min). Train.
@@ -81,7 +89,7 @@ def test_full_user_journey_preserves_session_state() -> None:
     _set_slider(reinforce, "episodes", 5)
     reinforce = reinforce.run()
     reinforce = _click_first(reinforce, "Train REINFORCE")
-    assert reinforce.session_state.get("gui.reinforce.last_history") is not None, (
+    assert _state_get(reinforce, "gui.reinforce.last_history") is not None, (
         "REINFORCE history missing after training"
     )
     carry = _forward(reinforce)
@@ -94,8 +102,8 @@ def test_full_user_journey_preserves_session_state() -> None:
     a2c = _click_first(a2c, "Train A2C")
     # A2C page may stash under gui.a2c.last_history or shared key — accept either.
     assert (
-        a2c.session_state.get("gui.a2c.last_history") is not None
-        or a2c.session_state.get("gui.__shared__.last_a2c_history") is not None
+        _state_get(a2c, "gui.a2c.last_history") is not None
+        or _state_get(a2c, "gui.__shared__.last_a2c_history") is not None
     ), "A2C history missing after training"
     carry = _forward(a2c)
 
@@ -106,22 +114,19 @@ def test_full_user_journey_preserves_session_state() -> None:
     _set_slider(compare, "Episodes per seed", 5)
     compare = compare.run()
     compare = _click_first(compare, "Run comparison")
-    assert compare.session_state.get("gui.compare.last_result") is not None, (
-        "Compare result missing after run"
-    )
+    assert _state_get(compare, "gui.compare.last_result") is not None, "Compare result missing after run"
     carry = _forward(compare)
 
     # 7. Recommend — toggle is on by default (Use State.initial()); click button.
     rec = _run("07_recommend.py", prior=carry)
     assert not rec.exception, f"recommend crashed: {rec.exception}"
     rec = _click_first(rec, "Recommend")
-    assert rec.session_state.get("gui.recommend.last_recommendation") is not None, (
+    assert _state_get(rec, "gui.recommend.last_recommendation") is not None, (
         "Recommendation missing after click"
     )
 
     # Cross-page invariant — every page wrote into its own namespace and
     # the keys survived all 7 transitions via the explicit forwarding above.
-    final = rec.session_state
     survivors = (
         "gui.data.handle",
         "gui.lstm.history",
@@ -129,5 +134,5 @@ def test_full_user_journey_preserves_session_state() -> None:
         "gui.compare.last_result",
         "gui.recommend.last_recommendation",
     )
-    missing = [k for k in survivors if final.get(k) is None]
+    missing = [k for k in survivors if _state_get(rec, k) is None]
     assert not missing, f"session_state lost across page transitions: {missing}"
