@@ -27,9 +27,6 @@ jobs:
         run: uv run python scripts/check_file_sizes.py
       - name: Pytest with coverage
         run: uv run pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml -v
-      - name: Streamlit GUI smoke (AppTest)
-        run: uv run pytest tests/test_gui_*.py -v --timeout=120
-        continue-on-error: false
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
