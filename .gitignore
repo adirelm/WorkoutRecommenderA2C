@@ -38,7 +38,7 @@ instructions/
 data/raw/
 data/processed/
 results/checkpoints/
-results/figures/
+# results/figures/  # tracked: §7.7 plot deliverables (submission artifacts, not runtime)
 
 # Notebook scratch
 .ipynb_checkpoints/
