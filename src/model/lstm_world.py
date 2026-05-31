@@ -31,7 +31,23 @@ _EXPECTED_ACTION_SEQ_NDIM = 2  # (batch, seq)
 
 
 class LSTMWorldModel(nn.Module):
-    """Stateless-per-call LSTM world model. Hidden state is recomputed each forward."""
+    """Stateless-per-call LSTM world model. Hidden state is recomputed each forward.
+
+    Input:
+      state_seq (torch.Tensor) — float32 (batch, seq, STATE_DIM) trainee-state history.
+      action_seq (torch.Tensor) — int64 (batch, seq) coach-action ids per timestep.
+
+    Output:
+      torch.Tensor — float32 (batch, STATE_DIM) predicted next-state ŝ_{t+1}
+      from the linear head on the last LSTM timestep (forward()).
+
+    Setup:
+      hidden_size (int) — LSTM hidden dim.
+      num_layers (int) — stacked LSTM layers (dropout only applied if >1).
+      dropout (float) — inter-layer dropout prob.
+      action_embed_dim (int) — embedding width for ACTION_COUNT discrete actions.
+      seed (int | None) — torch.manual_seed for deterministic init.
+    """
 
     def __init__(
         self,

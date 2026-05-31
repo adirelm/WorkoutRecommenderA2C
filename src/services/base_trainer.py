@@ -52,7 +52,14 @@ class StepRecord:
 
 
 class BaseTrainer(ABC):
-    """Abstract on-policy trainer; subclasses implement forward_step + train."""
+    """Abstract on-policy trainer; subclasses implement forward_step + train.
+
+    Input: forward_step takes state_t (Tensor (STATE_DIM,)) + mask_t (bool
+      (ACTION_COUNT,)); train() takes episodes (int | None).
+    Output: train()→History dataclass; forward_step()→(action_id, log_prob,
+      entropy, value|None); rollout_episode()→list[StepRecord].
+    Setup: env (WorkoutEnv), config (Any hyperparams), seed (int)→set_global_seed.
+    """
 
     def __init__(self, env: WorkoutEnv, config: Any, seed: int = 42) -> None:
         """Seed everything, then store env + config. Subclasses build optimisers."""

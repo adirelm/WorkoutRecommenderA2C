@@ -27,7 +27,24 @@ from src.services.types import REINFORCEConfig, REINFORCEHistory
 
 
 class REINFORCETrainer(BaseTrainer):
-    """Monte-Carlo REINFORCE with running-mean baseline."""
+    """Monte-Carlo REINFORCE with running-mean baseline.
+
+    Input:
+      state_t (torch.Tensor) — (STATE_DIM,) per-step state into forward_step().
+      mask_t (torch.Tensor) — bool (ACTION_COUNT,) legal-action mask.
+      episodes (int | None) — override config.episodes for one train() call.
+
+    Output:
+      REINFORCEHistory — train() returns episodes_run + per-episode rewards,
+      losses, baseline trace, and seed (immutable tuples).
+
+    Setup:
+      policy (PolicyNet) — actor network whose params Adam updates.
+      env (WorkoutEnv) — episodic environment to roll out against.
+      config (REINFORCEConfig | None) — lr, gamma, episodes, baseline_alpha,
+        entropy_coef, grad_clip_norm (defaults to REINFORCEConfig()).
+      seed (int) — passed to BaseTrainer for global RNG seeding.
+    """
 
     def __init__(
         self,
