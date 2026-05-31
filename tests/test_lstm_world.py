@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 import torch
 
 from src.env.state import ACTION_COUNT, STATE_DIM
