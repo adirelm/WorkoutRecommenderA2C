@@ -277,10 +277,17 @@ carries 53 rows and 46 MUSTs.
   one selected Kaggle program (PHUL primary; GZCLP / nSuns 5/3/1 fallback).
 - **F2**. Persist the logbook as parquet under `data/synthetic/` with a seed
   manifest so any run is bit-reproducible from `seed → logbook → models`.
+  **Status: DEFERRED — synthetic trainee is generated in-memory per run
+  (deterministic via seed), no parquet cache needed for the 28-day rollout
+  horizon. Implement only if rollout horizons grow to weeks.**
 - **F3**. Provide a chronological train/val split (last 7 days held out for
   LSTM validation).
 - **F3a**. Apply the §1.5.0 Data Quality Contract to the raw Kaggle CSVs
   before state computation; emit `results/data_quality_report.txt`.
+  **Status: DEFERRED — data ingest validation lives inline in
+  `src/data/program_filter.py` (raises on no match) +
+  `tests/unit/test_program_filter.py` asserts the contract. Separate `cleaner.py`
+  + `data_quality_report` would be needed only for multi-source ingest.**
 
 ### 3.2 World model
 - **F4** (brief §7.3). Train an LSTM `f_φ: (s_t, a_t) → s_{t+1}` on the 21-day
@@ -395,7 +402,7 @@ The single facade. UI / notebook / CLI depend **only** on this surface.
 class TrainingSDK:
     def __init__(self, config: Config, seed: int) -> None: ...
 
-    # F1–F3a
+    # F1, F3 (F2 + F3a DEFERRED — see §3.1)
     def prepare_data(self) -> LogbookHandle: ...
 
     # F4–F6
@@ -476,9 +483,9 @@ implementation detail behind `TrainingSDK.train_reinforce()`.
 | Req  | Acceptance criterion                                                          | Evidence pointer            |
 |------|-------------------------------------------------------------------------------|-----------------------------|
 | F1   | `prepare_data` produces a 28-row parquet with the 12-d state schema           | `tests/test_data.py::test_logbook_shape` |
-| F2   | Same seed → byte-identical parquet hash                                       | `tests/test_data.py::test_logbook_reproducible` |
+| F2   | **DEFERRED** — synthetic trainee is in-memory per run (seeded); no parquet cache needed at 28-day horizon | n/a (deferred) |
 | F3   | 21/7 chronological split returned in order                                    | `tests/test_data.py::test_chrono_split` |
-| F3a  | Cleaning report emitted; 4 named cases pass                                   | `tests/test_data_quality.py` (4 cases) |
+| F3a  | **DEFERRED** — ingest validation inline in `src/data/program_filter.py` (raises on no match); separate `cleaner.py` + report only needed for multi-source ingest | `tests/unit/test_program_filter.py` asserts the contract |
 | F4   | LSTM train MSE on the 21-day window decreases monotonically (5-epoch median)  | `tests/test_world_model.py::test_train_loss_decreases` |
 | F5   | Validation loss curve emitted and saved as `results/lstm_losses.png`          | `notebooks/analysis.ipynb` cell 3 |
 | F6   | `rollout(s0, π_uniform, 14)` returns a `(14, 12)` array, no NaNs              | `tests/test_world_model.py::test_rollout_shape` |
