@@ -29,19 +29,19 @@ will earn.
 ## Build phases — status + evidence-pointer template
 | # | Phase | Status | Evidence pointer template |
 |---|---|---|---|
-| **0** | **Must-fix preflight** (theory accuracy, repro plumbing, data-quality contract, action-masking ADR, honesty pass) | ⬜ | `docs/THEORY.md`, `src/utils/seeding.py`, `tests/test_reproducibility.py`, `tests/test_data_quality.py`, `docs/adr/ADR-004-action-masking.md`, commit Phase 0 |
-| 1 | Repo bootstrap (pyproject, uv, ruff, pytest, CI, ≤150-line guardrail) | ⬜ | `pyproject.toml`, `.github/workflows/ci.yml`, commit Phase 1 |
-| 2 | Theory artefact (`docs/THEORY.md` §1.1–§3.4 + brief equations 1/2/4/7/8/9/10/11/12/15/16/17 + derivations) | ⬜ | `docs/THEORY.md`, commit Phase 2 |
-| 3 | State / action design docs + dataset gatekeeper | ⬜ | `docs/STATE_DESIGN.md`, `docs/ACTION_DESIGN.md`, `data/`, Phase 3 |
-| 4 | Workout env (terminals, reward = gain − λ₁·overload − λ₂·imbalance) | ⬜ | `src/env/workout_env.py`, tests, Phase 4 |
-| 5 | LSTM world model (Kaggle history → next-state predictor) | ⬜ | `src/world_model/lstm_world.py`, loss curve, Phase 5 |
-| 6 | Policy net (1-layer FC, 128, Categorical head over 7 actions) | ⬜ | `src/policy/policy_net.py`, tests, Phase 6 |
-| 7 | REINFORCE trainer (objective, log-trick, weighted-CE, baseline) | ⬜ | `src/training/reinforce_*`, tests, Phase 7 |
-| 8 | A2C trainer (actor-critic, advantage) | ⬜ | `src/training/a2c_*`, tests, Phase 8 |
-| 9 | RL-on-frozen-world-model pipeline + action masking service | ⬜ | `src/training/rl_on_world_model.py`, `src/services/action_mask_service.py`, Phase 9 |
-| 10 | SDK facade (single entry point per CLAUDE.md §3) + CLI + GUI dashboard | ⬜ | `src/sdk.py`, `src/cli/`, `src/gui/`, Phase 10 |
-| 11 | Analysis notebook (LaTeX next to LSTM loss / REINFORCE / A2C / comparison + §7.6 discussion) | ⬜ | `notebooks/analysis.ipynb`, Phase 11 |
-| 12 | Docs + COST_ANALYSIS + PROMPTS + submission PDF + collaborator invite + README index | ⬜ | `README.md`, `docs/COST_ANALYSIS.md`, `docs/shared/PROMPTS.md`, `adrl-001-ex03.pdf`, Phase 12 |
+| **0** | **Must-fix preflight** (theory accuracy, repro plumbing, data-quality contract, action-masking ADR, honesty pass) | ✅ | `docs/THEORY.md`, `src/utils/seeding.py`, `tests/test_reproducibility.py`, `tests/test_data_quality.py`, `docs/adr/ADR-004-action-masking.md`, commit Phase 0 |
+| 1 | Repo bootstrap (pyproject, uv, ruff, pytest, CI, ≤150-line guardrail) | ✅ | `pyproject.toml`, `.github/workflows/ci.yml`, commit Phase 1 |
+| 2 | Theory artefact (`docs/THEORY.md` §1.1–§3.4 + brief equations 1/2/4/7/8/9/10/11/12/15/16/17 + derivations) | ✅ | `docs/THEORY.md`, commit Phase 2 |
+| 3 | State / action design docs + dataset gatekeeper | ✅ | `docs/STATE_DESIGN.md`, `docs/ACTION_DESIGN.md`, `data/`, Phase 3 |
+| 4 | Workout env (terminals, reward = gain − λ₁·overload − λ₂·imbalance) | ✅ | `src/env/workout_env.py`, tests, Phase 4 |
+| 5 | LSTM world model (Kaggle history → next-state predictor) | ✅ | `src/model/lstm_world.py`, loss curve, Phase 5 |
+| 6 | Policy net (1-layer FC, 128, Categorical head over 7 actions) | ✅ | `src/model/policy_net.py`, tests, Phase 6 |
+| 7 | REINFORCE trainer (objective, log-trick, weighted-CE, baseline) | ✅ | `src/training/reinforce_*`, tests, Phase 7 |
+| 8 | A2C trainer (actor-critic, advantage) | ✅ | `src/services/a2c_*`, tests, Phase 8 |
+| 9 | RL-on-frozen-world-model pipeline + action masking service | ✅ | `src/training/rl_on_world_model.py`, `src/env/action_mask.py`, Phase 9 |
+| 10 | SDK facade (single entry point per CLAUDE.md §3) + CLI + GUI dashboard | ✅ | `src/sdk/sdk.py`, `src/cli/`, `src/gui/`, Phase 10 |
+| 11 | Analysis notebook (LaTeX next to LSTM loss / REINFORCE / A2C / comparison + §7.6 discussion) | ✅ | `notebooks/analysis.ipynb`, Phase 11 |
+| 12 | Docs + COST_ANALYSIS + PROMPTS + submission PDF + collaborator invite + README index | ✅ | `README.md`, `docs/COST_ANALYSIS.md`, `docs/shared/PROMPTS.md`, `adrl-001-ex03.pdf`, Phase 12 |
 
 Phase gates (all must be green before phase is marked ✅):
 ruff zero violations · every `.py` ≤150 LOC · coverage ≥85% · uv-only ·
@@ -49,6 +49,8 @@ SDK is single business-logic entry · notebook is a *consumer* of the
 SDK (no parallel implementation) · LSTM weights frozen during RL phase ·
 seeding deterministic across two consecutive forward passes (M2) ·
 data-quality report emitted to `results/data_quality_report.txt` (M3).
+
+**Status as of v1.1.1 (2026-05-31)**: all 10 phases complete. 408 tests / 90.83% coverage / ruff clean / CI green. See CHANGELOG.md for the per-version diff.
 
 ## Initial task list
 
