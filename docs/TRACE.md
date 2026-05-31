@@ -36,8 +36,8 @@ is cut.
 
 | req_id | source | binding_text | deliverable_file_or_section | test_id_planned | priority |
 |---|---|---|---|---|---|
-| 1.1 | Brief §1 | מהי מדיניות: וקטור של הסתברויות — π_θ(a\|s) מתאר וקטור הסתברויות; הפרמטרים של המדיניות מסומנים ב-θ. | docs/THEORY.md §1.1 + src/policy/policy_net.py (Categorical head over 7 actions) | test_policy_outputs_probability_distribution | MUST |
-| 1.2 | Brief §1 | פונקציית המטרה J(θ) = E_{τ~π_θ}[ Σ γ^t r_t ]. | docs/THEORY.md §1.2 + src/training/objective.py | test_discounted_return_formula | MUST |
+| 1.1 | Brief §1 | מהי מדיניות: וקטור של הסתברויות — π_θ(a\|s) מתאר וקטור הסתברויות; הפרמטרים של המדיניות מסומנים ב-θ. | docs/THEORY.md §1.1 + src/model/policy_net.py (Categorical head over 7 actions) | test_policy_outputs_probability_distribution | MUST |
+| 1.2 | Brief §1 | פונקציית המטרה J(θ) = E_{τ~π_θ}[ Σ γ^t r_t ]. | docs/THEORY.md §1.2 + src/services/reinforce_helpers.py (compute_returns) | test_discounted_return_formula | MUST |
 | 1.3 | Brief §1 | המצב כווקטור של מספרים: דוגמת ה-Cart — ארבעה ערכים מתארים את המצב. | docs/THEORY.md §1.3 + docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002, 12-d state vector spec) | test_state_vector_shape | MUST |
 | 1.4 | Brief §1 | מקומי מול מצטבר: RNN/LSTM/Transformer; POMDP; רצף תצפיות h_t; "מודלי עולם" שאליהם נחזור בפרק 7. | docs/THEORY.md §1.4 + src/model/lstm_world.py | tests/test_lstm_world.py::test_forward_output_shape | MUST |
 | 2.1 | Brief §2 | תהליך האימון: אפיזודה מתחילה ברשת מאותחלת אקראית; דגימת פעולה לפי הסתברויות; שיפור עד סוף האפיזודה. | src/services/reinforce_trainer.py (episode loop) | test_episode_loop_random_init_sample_update | MUST |
@@ -72,8 +72,8 @@ is cut.
 | AM2 | Brief §7.6.1 | Simplified-reward acknowledgement + hierarchical-decision limitation discussion | notebooks/analysis.ipynb §reward-simplification + README §Honest Limitations (d) | n/a | MUST |
 | TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/figures/comparison.png + docs/ANALYSIS.md | test_both_agents_train_to_completion | MUST |
 | TR2 | Transcript / grading_hints | STATE/ACTION DESIGN IS GRADED: justify which dataset columns become actions vs states (01:18:27). | docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002) + docs/ACTION_DESIGN.md (pointer to PRD §1.6 + ADR-004, 7-action set) | n/a (doc artifact) | MUST |
-| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/services/rl_on_world_model.py — BOUND — src/services/reinforce_trainer.py wires PolicyNet onto frozen LSTMWorldModel via LSTMEnvAdapter (Phase 3+4 join) | test_pipeline_lstm_then_rl | MUST |
-| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/services/rl_on_world_model.py (requires_grad=False) — BOUND — model.freeze() called pre-RL in Phase 4 trainer path; LSTMEnvAdapter __init__ asserts is_frozen | test_lstm_params_frozen_during_rl | MUST |
+| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/model/lstm_env_adapter.py — BOUND — src/services/reinforce_trainer.py wires PolicyNet onto frozen LSTMWorldModel via LSTMEnvAdapter (Phase 3+4 join) | test_pipeline_lstm_then_rl | MUST |
+| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/model/lstm_world.py::freeze() (requires_grad=False) — BOUND — model.freeze() called pre-RL in Phase 4 trainer path; src/model/lstm_env_adapter.py __init__ asserts is_frozen | test_lstm_params_frozen_during_rl | MUST |
 | TR5 | Transcript / grading_hints | SIMPLE NET: 1-layer FC, 128 neurons (01:06:59). | src/model/policy_net.py (architecture) + config/config.yaml | test_policy_net_hidden_size_128_single_layer | MUST |
 | TR6 | Transcript / grading_hints | STOCHASTIC POLICY DURING TRAINING: sample (Categorical), not argmax. | src/model/policy_net.py (sample at train) | test_training_uses_categorical_sample_not_argmax | MUST |
 | TR7 | Transcript / grading_hints | Check latest assignment PDF before starting (uploaded late). | docs/SOURCES.md (assignment PDF hash + date) | n/a (process artifact) | SHOULD |
@@ -103,8 +103,8 @@ is cut.
 | R10 | Standing rule R10 | Late penalty 5pts/24h. | docs/SUBMISSION.md (risk register) | n/a | SHOULD |
 | CL1 | CLAUDE.md hard constraint | File size ≤ 150 LOC per .py file. | All src/*.py + tests/*.py | test_no_file_exceeds_150_loc | MUST |
 | CL2 | CLAUDE.md hard constraint | TDD RED→GREEN→REFACTOR; 85%+ coverage. | tests/ + coverage report | test_coverage_at_least_85_percent | MUST |
-| CL3 | CLAUDE.md hard constraint | OOP: BaseAgent → REINFORCEAgent / A2CAgent; no duplication. | src/agents/base_agent.py + reinforce_agent.py + a2c_agent.py | test_agents_inherit_base_no_dup_logic | MUST |
-| CL4 | CLAUDE.md hard constraint | No hardcoded values: all algorithm-relevant params in config/config.yaml. | config/config.yaml + src/config/loader.py | test_no_hardcoded_hyperparams_in_src | MUST |
+| CL3 | CLAUDE.md hard constraint | OOP: BaseTrainer → REINFORCETrainer / A2CTrainer; no duplication. | src/services/base_trainer.py + src/services/reinforce_trainer.py + src/services/a2c_trainer.py | test_agents_inherit_base_no_dup_logic | MUST |
+| CL4 | CLAUDE.md hard constraint | No hardcoded values: all algorithm-relevant params in config/config.yaml. | config/config.yaml + src/utils/config_loader.py + typed dataclass mirrors (src/services/types.py, src/services/a2c_types.py, src/model/types.py, src/env/workout_env.py::EnvConfig, src/env/reward.py::RewardConfig) | test_no_hardcoded_hyperparams_in_src | MUST |
 | CL5 | CLAUDE.md hard constraint | Zero Ruff violations on src/ tests/ main.py. | CI ruff step | test_ruff_clean | MUST |
 | CL6 | CLAUDE.md hard constraint | UV only — no pip/conda. | pyproject.toml + uv.lock + README run instructions | test_uv_lock_present_no_requirements_txt | MUST |
 | CL7 | CLAUDE.md version control | Same repo as A1/A2; branch assignment-3; version 1.2.x. | git branch + CHANGELOG.md | test_branch_and_version_consistent | MUST |
@@ -187,3 +187,13 @@ Phase 9 added a Streamlit GUI surface (10 pages under src/gui/). New TRACE rows:
 | G5 | Action Masking demo (bonus beyond brief minimum) | src/gui/pages/08_action_masking.py | tests/test_gui_page_action_masking.py | NICE |
 | G6 | CLI verb 7 launch-gui | src/cli/menu.py | tests/test_cli_menu.py | MUST |
 | G7 | Screenshot capture | scripts/capture_gui_screenshots.py + docs/assets/gui_*.png | tests/test_gui_screenshots_exist.py | NICE |
+
+## Phase-9 TRACE path audit (2026-05-31)
+
+Full sweep of every `src/*.py` reference in this matrix against `test -f` revealed six broken planning-time paths. All corrected to the as-built locations and re-verified (every `src/` reference now resolves on disk):
+
+- Row 1.1: `src/policy/policy_net.py` → `src/model/policy_net.py` (no `src/policy/` package; PolicyNet lives under `src/model/` alongside the LSTM world model — same drift already noted in the Phase-4 sweep).
+- Row 1.2: `src/training/objective.py` → `src/services/reinforce_helpers.py` (no `src/training/` package; the discounted-return objective J(θ) is implemented in `compute_returns`).
+- Rows TR3, TR4: `src/services/rl_on_world_model.py` → `src/model/lstm_env_adapter.py` (the planned rl_on_world_model.py was never built as a separate file; the LSTM-freeze + PolicyNet-onto-frozen-LSTM join lives in `src/model/lstm_env_adapter.py`, which enforces `model.is_frozen()` in `__init__`).
+- Row CL3: `src/agents/base_agent.py + reinforce_agent.py + a2c_agent.py` → `src/services/base_trainer.py + src/services/reinforce_trainer.py + src/services/a2c_trainer.py` (no `src/agents/` package; OOP base class is `BaseTrainer`, subclassed by `REINFORCETrainer` and `A2CTrainer`).
+- Row CL4: `src/config/loader.py` → `src/utils/config_loader.py` + typed dataclass mirrors (`src/services/types.py`, `src/services/a2c_types.py`, `src/model/types.py`, `src/env/workout_env.py::EnvConfig`, `src/env/reward.py::RewardConfig`) (no `src/config/` package; the yaml loader lives under `src/utils/`, with dataclass defaults mirroring values into typed records).

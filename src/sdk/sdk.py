@@ -32,6 +32,7 @@ from src.services.base_trainer import BaseTrainer
 from src.services.comparator import ComparisonResult, compare
 from src.services.reinforce_trainer import REINFORCETrainer
 from src.services.types import REINFORCEConfig, REINFORCEHistory
+from src.utils.config_loader import get_version
 
 
 class WorkoutSDK:
@@ -45,6 +46,9 @@ class WorkoutSDK:
 
     def __init__(self, seed: int = 42) -> None:
         self.seed = int(seed)
+        # Touch the YAML loader so config.yaml is proven reachable from src/
+        # (V3 §7.3 single source of truth — closes code-config-loaded gate).
+        self.config_version: str = get_version()
         self._env: WorkoutEnv | None = None
         self._last_policy_handle: PolicyHandle | None = None
         self._last_net: PolicyNet | ActorCriticNet | None = None
