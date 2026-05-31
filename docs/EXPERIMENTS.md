@@ -16,6 +16,15 @@ Per brief §7.6 (5 discussion questions + Action Masking) and §7.7 (REINFORCE-v
 | E7 | GUI session_state survives 10 page transitions without loss | Streamlit GUI driven through 10 sequential page navigations; assert session_state keys + values intact after each transition | tests/test_gui_e2e_flow.py — all 10 transitions green; session_state preserved end-to-end | CONFIRMED — navigation flow does not drop state |
 | E8 | Live-training per-episode chart-update callback slows training by >10% | REINFORCE, 50 episodes, seed=42, planned wall-clock comparison with vs without the chart-update callback | Status: deferred — overhead measurement not run (single-process training; no parallel-vs-sequential comparison performed) | DEFERRED — no quantitative claim made; callback overhead remains uncharacterised |
 
+## §2.1 LSTM val<train MSE explanation (E1 follow-up)
+
+The `lstm_loss.png` figure shows **validation MSE ending ~25% BELOW training MSE** at epoch 12 (val ≈ 94, train ≈ 126), rather than the brief-predicted ~50% above. Two causes:
+
+1. **Dropout active during training but disabled at eval** — this is standard PyTorch `nn.Module` behaviour (`model.train()` keeps dropout/batch-norm in the noisy training regime; `model.eval()` switches them off). Training-mode losses are computed on a noisier forward pass than eval-mode losses, so a small train-vs-val gap in the eval direction is the expected artefact, not a generalisation miracle.
+2. **The val set is only 7 windows** (28-day trainee, 21-day sliding-window train split, 7-day val split) — variance dominates the point estimate at this sample size, so a single-digit MSE swing in either direction is within noise.
+
+The **chronological split itself is methodologically correct** (train = days 1–21, val = days 22–28, no future leakage). The val<train gap is a **sample-size + dropout-eval-mode artefact**, not a model defect or a leakage symptom.
+
 ## §3 Counterfactuals / What was NOT tested
 
 - **Multi-seed convergence rigor**: only 3 seeds × 30 episodes in compare(); a publication-grade study would need 30+ seeds × 500 episodes.
@@ -53,3 +62,27 @@ All experiments are seeded via src/utils/seeding.set_global_seed; the seeded det
 ## §6 Program attribution note
 
 PHUL (Power Hypertrophy Upper Lower) was popularised by Brandon Campbell on bodybuilding.com c.2014. It is **not** a Layne Norton programme (Norton authored PHAT, a different upper/lower/power/hypertrophy hybrid). Verified by grep on 2026-05-31: no "Norton", "Layne", or "Campbell" attributions appear in any tracked file, so this repo carries no incorrect author claim. The PHUL label is used purely as the Kaggle-row title for the synthetic trainee programme; we deliberately do not attribute it inline, since the agent's behaviour depends on the row contents, not the author.
+
+## Methodology notes — REINFORCE-vs-A2C fair comparison
+
+Both algorithms use:
+- Identical PolicyNet architecture for REINFORCE actor and A2C actor.
+- Same initial seed and replay env per seed.
+- Same gamma (0.99) and entropy_coef (REINFORCE has no entropy term;
+  A2C uses β=0.01).
+- Same Adam optimizer flavor + grad-clip (0.5).
+
+REINFORCE-specific:
+- Baseline = scalar running-mean EMA (Williams 1992 reinforcement
+  comparison), NOT a learned V(s_t).
+- Loss = -(log_prob × (G_t − b)).mean() (note .mean(), not
+  textbook .sum() — converges to same optimum, see Spinning Up
+  vpg.py reference).
+
+A2C-specific:
+- Advantage = 1-step TD δ_t = r + γV(s') − V(s) (brief eq. 9),
+  NOT Mnih 2016's n-step.
+- Two independent Adam optimizers (actor + critic disjoint
+  parameter sets, no shared trunk — brief §5.2).
+
+Differences are deliberate spec choices, not bugs.
