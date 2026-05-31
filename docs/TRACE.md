@@ -70,27 +70,27 @@ is cut.
 | Q5 | Brief §7.6 Q5 | Which physiological measurements (HR, soreness, strength logs) would improve the system? | notebooks/analysis.ipynb §discussion-q5 | n/a | MUST |
 | AM1 | Brief §7.6.1 | Action Masking proposal: logits→−∞ before softmax; Huang & Ontañón 2022 [8]; worked example (legs-day → mask Legs next day) | docs/adr/ADR-004-action-masking.md + src/env/action_mask.py + notebooks/analysis.ipynb §action-masking | test_action_mask_zeros_prob_for_invalid | MUST |
 | AM2 | Brief §7.6.1 | Simplified-reward acknowledgement + hierarchical-decision limitation discussion | notebooks/analysis.ipynb §reward-simplification + README §Honest Limitations (d) | n/a | MUST |
-| TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/figures/comparison.png + docs/ANALYSIS.md | test_both_agents_train_to_completion | MUST |
+| TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/figures/comparison.png + notebooks/analysis.ipynb (cells 7-8 §discussion-q3) | test_both_agents_train_to_completion | MUST |
 | TR2 | Transcript / grading_hints | STATE/ACTION DESIGN IS GRADED: justify which dataset columns become actions vs states (01:18:27). | docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002) + docs/ACTION_DESIGN.md (pointer to PRD §1.6 + ADR-004, 7-action set) | n/a (doc artifact) | MUST |
 | TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/model/lstm_env_adapter.py — BOUND — src/services/reinforce_trainer.py wires PolicyNet onto frozen LSTMWorldModel via LSTMEnvAdapter (Phase 3+4 join) | test_pipeline_lstm_then_rl | MUST |
 | TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/model/lstm_world.py::freeze() (requires_grad=False) — BOUND — model.freeze() called pre-RL in Phase 4 trainer path; src/model/lstm_env_adapter.py __init__ asserts is_frozen | test_lstm_params_frozen_during_rl | MUST |
 | TR5 | Transcript / grading_hints | SIMPLE NET: 1-layer FC, 128 neurons (01:06:59). | src/model/policy_net.py (architecture) + config/config.yaml | test_policy_net_hidden_size_128_single_layer | MUST |
 | TR6 | Transcript / grading_hints | STOCHASTIC POLICY DURING TRAINING: sample (Categorical), not argmax. | src/model/policy_net.py (sample at train) | test_training_uses_categorical_sample_not_argmax | MUST |
-| TR7 | Transcript / grading_hints | Check latest assignment PDF before starting (uploaded late). | docs/SOURCES.md (assignment PDF hash + date) | n/a (process artifact) | SHOULD |
+| TR7 | Transcript / grading_hints | Check latest assignment PDF before starting (uploaded late). | adrl-001-ex03.pdf (repo root) + adrl-001-ex03.pdf (brief copy, see README §References) | n/a (process artifact) | SHOULD |
 | TR8 | Transcript / grading_hints | DEADLINE FLEXIBILITY: lecturer is open if asked; late penalties not fixed. | docs/SUBMISSION.md note + email-trail evidence if requested | n/a | NICE |
 | TR9 | Transcript / grading_hints | Future lectures workshop-style — schedule accordingly. | docs/PLAN.md (schedule section) | n/a | NICE |
-| TR10 | Transcript / grading_hints | ANALYSIS SECTION (§7.6) matters — graphs + comparison beyond "does it run". | docs/ANALYSIS.md + results/figures/*.png | test_analysis_artifacts_exist | MUST |
-| A1A1 | A1 avoid | Do NOT express strong/unqualified confidence in self-assessment — be honest about limitations. | README §Self-Assessment + docs/REFLECTION.md (limitations) | n/a | MUST |
+| TR10 | Transcript / grading_hints | ANALYSIS SECTION (§7.6) matters — graphs + comparison beyond "does it run". | notebooks/analysis.ipynb (§7.6 Q1-Q5 cells) + results/figures/*.png | test_analysis_artifacts_exist | MUST |
+| A1A1 | A1 avoid | Do NOT express strong/unqualified confidence in self-assessment — be honest about limitations. | README §Honest Limitations + README §Reproducibility Caveats | n/a | MUST |
 | A1A2 | A1 avoid | Do NOT submit only the polished final — include thinking process, abandoned approaches, negative results. | docs/shared/PROMPTS.md (multi-pass narrative + dead-ends) | n/a | MUST |
 | A1A3 | A1 avoid | Include AI tooling cost (tokens, subscription share, dev hours, AI-rework tax) not just cloud. | docs/COST_ANALYSIS.md | test_cost_analysis_has_ai_tooling_section | MUST |
 | A1A4 | A1 avoid | Show automated enforcement (CI, pre-commit, lint gates, coverage gates) — not manual review. | .github/workflows/ci.yml + .pre-commit-config.yaml | test_ci_runs_lint_and_coverage_gate | MUST |
-| A1A5 | A1 avoid | Explicitly demonstrate separation of concerns + extensibility for a new dev. | docs/ARCHITECTURE.md (layer diagram) + ADRs | test_module_boundaries_no_crosslayer_imports | MUST |
-| A1A6 | A1 avoid | Answer each generic rubric bullet with concrete project-specific evidence. | docs/RUBRIC_SELFCHECK.md (per-bullet evidence) | n/a | MUST |
+| A1A5 | A1 avoid | Explicitly demonstrate separation of concerns + extensibility for a new dev. | docs/PLAN.md (C4 layer diagram §3) + docs/adr/ADR-001-hybrid-architecture.md + README §Architecture | test_module_boundaries_no_crosslayer_imports | MUST |
+| A1A6 | A1 avoid | Answer each generic rubric bullet with concrete project-specific evidence. | docs/SUBMISSION.md (per-rubric-bullet evidence) + docs/QUALITY.md (ISO/IEC 25010 mapping) | n/a | MUST |
 | A1A7 | A1 avoid | Do NOT erode the six praised areas (planning, docs, config/security, testing, UI/UX, version mgmt). | README + docs/PLAN.md + config/config.yaml + tests/ + ui/ + CHANGELOG.md | test_six_praised_areas_smoke | MUST |
 | A1A8 | A1 avoid | PROMPTS.md must show human judgment, pushback, caught mistakes, redesigns — not passive transcript. | docs/shared/PROMPTS.md (annotated decisions) | n/a | MUST |
 | A1R1 | A1 repeat | Keep PRD/ADR-style artifacts enabling independent onboarding. | docs/PRD.md + docs/adr/*.md | n/a | MUST |
 | A1R2 | A1 repeat | Maintain professional README/setup/usage docs. | README.md (setup, usage, results) | n/a | MUST |
-| A1R3 | A1 repeat | Externalized config (config.yaml), secrets discipline, multi-environment. | config/config.yaml + .env.example + docs/SECURITY.md | test_no_secrets_in_repo | MUST |
+| A1R3 | A1 repeat | Externalized config (config.yaml), secrets discipline, multi-environment. | config/config.yaml + .env-example + docs/QUALITY.md §6 (Security) | test_no_secrets_in_repo | MUST |
 | R1 | Standing rule R1 | Submit to GitHub; share with rmisegal@gmail.com (read-only collaborator). | docs/SUBMISSION.md + GitHub repo settings screenshot | n/a (process) | MUST |
 | R2 | Standing rule R2 | Each member submits separately on Moodle; same repo URL; per-person timing. | docs/SUBMISSION.md (per-member checklist) | n/a | MUST |
 | R3 | Standing rule R3 | 8-char group code adrl-001 (semester-long). | README header + cover sheet + adrl-001-ex03.pdf filename | test_group_code_present_in_readme | MUST |
@@ -99,7 +99,7 @@ is cut.
 | R6 | Standing rule R6 | README at repo root + docs/PRD.md + docs/PLAN.md + docs/TODO.md. | README.md + docs/PRD.md + docs/PLAN.md + docs/TODO.md | test_required_root_docs_exist | MUST |
 | R7 | Standing rule R7 | §1.4 architect/implementer contract visible in CLAUDE.md + per-commit message. | CLAUDE.md §1.4 + git log (§-tagged commits) | test_claude_md_has_section_1_4 + test_commits_reference_sections | MUST |
 | R8 | Standing rule R8 | Deadline 2026-06-10 23:59. | docs/PLAN.md (milestone) + docs/SUBMISSION.md | n/a (calendar) | MUST |
-| R9 | Standing rule R9 | Lecturer scoring weight: principle UNDERSTANDING > training quality. | docs/THEORY.md + docs/ANALYSIS.md (concept depth) | n/a | MUST |
+| R9 | Standing rule R9 | Lecturer scoring weight: principle UNDERSTANDING > training quality. | docs/THEORY.md + notebooks/analysis.ipynb (§7.6 discussion cells, concept depth) | n/a | MUST |
 | R10 | Standing rule R10 | Late penalty 5pts/24h. | docs/SUBMISSION.md (risk register) | n/a | SHOULD |
 | CL1 | CLAUDE.md hard constraint | File size ≤ 150 LOC per .py file. | All src/*.py + tests/*.py | test_no_file_exceeds_150_loc | MUST |
 | CL2 | CLAUDE.md hard constraint | TDD RED→GREEN→REFACTOR; 85%+ coverage. | tests/ + coverage report | test_coverage_at_least_85_percent | MUST |
@@ -197,3 +197,15 @@ Full sweep of every `src/*.py` reference in this matrix against `test -f` reveal
 - Rows TR3, TR4: `src/services/rl_on_world_model.py` → `src/model/lstm_env_adapter.py` (the planned rl_on_world_model.py was never built as a separate file; the LSTM-freeze + PolicyNet-onto-frozen-LSTM join lives in `src/model/lstm_env_adapter.py`, which enforces `model.is_frozen()` in `__init__`).
 - Row CL3: `src/agents/base_agent.py + reinforce_agent.py + a2c_agent.py` → `src/services/base_trainer.py + src/services/reinforce_trainer.py + src/services/a2c_trainer.py` (no `src/agents/` package; OOP base class is `BaseTrainer`, subclassed by `REINFORCETrainer` and `A2CTrainer`).
 - Row CL4: `src/config/loader.py` → `src/utils/config_loader.py` + typed dataclass mirrors (`src/services/types.py`, `src/services/a2c_types.py`, `src/model/types.py`, `src/env/workout_env.py::EnvConfig`, `src/env/reward.py::RewardConfig`) (no `src/config/` package; the yaml loader lives under `src/utils/`, with dataclass defaults mirroring values into typed records).
+
+## Phase-10 TRACE doc-ref repoint (2026-05-31)
+
+Full sweep of every `docs/[A-Z]*\.md` reference in this matrix against `test -f` revealed six broken planning-time doc paths. All corrected to the as-built locations and re-verified (every `docs/` reference and every supplementary repo-root or `notebooks/` path now resolves on disk):
+
+- Row TR1: planning-time path `ANALYSIS.md` → as-built `notebooks/analysis.ipynb` (cells 7-8 §discussion-q3) — no standalone analysis doc was written; the analysis lives in the executed notebook alongside the comparison chart.
+- Row TR7: planning-time path `SOURCES.md` → as-built `adrl-001-ex03.pdf` (repo root brief copy) + README §References — no standalone sources doc; the brief PDF is committed at repo root and the bibliography lives in README §References.
+- Row TR10: planning-time path `ANALYSIS.md` → as-built `notebooks/analysis.ipynb` (§7.6 Q1-Q5 cells) — same collapse as TR1.
+- Row A1A1: planning-time path `REFLECTION.md` → as-built `README §Honest Limitations` + `README §Reproducibility Caveats` — no standalone reflection doc; honest-limits + repro-caveats sections in README serve the A1-feedback "be honest about limitations" ask directly.
+- Row A1A5: planning-time path `ARCHITECTURE.md` → as-built `docs/PLAN.md` §3 (C4 mermaid) + `docs/adr/ADR-001-hybrid-architecture.md` + README §Architecture — no standalone architecture doc; the layer diagram is in PLAN.md and the architectural decision in ADR-001.
+- Row A1A6: planning-time path `RUBRIC_SELFCHECK.md` → as-built `docs/SUBMISSION.md` + `docs/QUALITY.md` (ISO/IEC 25010 mapping) — no standalone rubric-self-check doc; per-rubric evidence lives in SUBMISSION.md and the quality-characteristic mapping in QUALITY.md.
+- Row A1R3: planning-time path `SECURITY.md` → as-built `docs/QUALITY.md` §6 (Security) + `.env-example` — no standalone security doc; the secrets-discipline contract is documented as `QUALITY.md §6 Security (confidentiality, integrity, authenticity, non-repudiation, accountability)` per ISO/IEC 25010:2011.

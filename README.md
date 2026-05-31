@@ -11,6 +11,26 @@ sign-off; the AI writes the code against the approved spec.
 
 ---
 
+## Brief §-id → artifact map
+
+Each binding §-id in the Assignment-3 brief maps to one as-built `src/`
+file, one `tests/` file, and (where the brief asks for a graph) one
+`results/figures/` chart. Every cell below resolves with `test -f`.
+The full requirement → code → test traceability is in
+[docs/TRACE.md](docs/TRACE.md).
+
+| Brief § | Code | Test | Chart |
+|---|---|---|---|
+| §7.1 State (12-d vector) | `src/env/state.py` | `tests/unit/env/test_state.py` | — |
+| §7.2 Dataset (PHUL filter) | `src/data/program_filter.py` | `tests/unit/data/test_program_filter.py` | — |
+| §7.3 LSTM world model | `src/model/lstm_world.py` | `tests/unit/model/test_lstm_world.py` | `results/figures/lstm_loss.png` |
+| §7.4 REINFORCE | `src/services/reinforce_trainer.py` | `tests/unit/services/test_reinforce_trainer.py` | `results/figures/reinforce_rewards.png` |
+| §7.5 A2C | `src/services/a2c_trainer.py` | `tests/unit/services/test_a2c_trainer.py` | `results/figures/a2c_training.png` |
+| §7.6 Compare (REINFORCE vs A2C) | `src/services/comparator.py` | `tests/unit/services/test_comparator.py` | `results/figures/comparison.png` |
+| §7.7 Plots & sensitivity scripts | `scripts/run_seeded_comparison.py`, `scripts/run_lr_sweep.py`, `scripts/run_lambda_sensitivity.py`, `scripts/run_lstm_convergence.py` | — | `results/figures/*.png` |
+
+---
+
 ## Installation & Quick Start
 
 ```bash
