@@ -32,7 +32,7 @@ def _sidebar_controls() -> dict[str, float | int]:
     st.sidebar.header("LSTM hyperparameters")
     hidden_size = st.sidebar.select_slider("hidden_size", options=list(_HIDDEN_OPTIONS), value=64)
     num_layers = st.sidebar.select_slider("num_layers", options=list(_LAYERS_OPTIONS), value=1)
-    epochs = st.sidebar.slider("epochs", min_value=5, max_value=50, value=15, step=1)
+    epochs = st.sidebar.slider("epochs", min_value=5, max_value=200, value=15, step=5)
     lr = st.sidebar.select_slider(
         "lr",
         options=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
