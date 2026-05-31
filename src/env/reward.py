@@ -1,10 +1,19 @@
 """Reward function — eq. 15 in the brief (ADR-003, §7.4).
 
-    r_t = gain_t - lambda_1 * overload_t - lambda_2 * imbalance_t
-
+Reward design (brief eq 16 / DA3): r = gain - lambda_1*overload - lambda_2*imbalance
 `gain` blends within-target progress and dietary-style variety; `overload`
 penalises super-linear excess over the rolling baseline; `imbalance`
 penalises muscle-group skew. Decomposition is returned for analysis.
+
+This is a weighted-sum scalarization, NOT the potential-based shaping
+proven policy-invariant by Ng, Harada & Russell (1999, "Policy invariance
+under reward transformations"). Ng's theorem only guarantees invariance
+for R'(s,a,s') = R + gamma*Phi(s') - Phi(s) with Phi a state-only potential. Our
+weighted-sum form can in principle change the optimal policy, but we
+accept that tradeoff because (a) the brief specifies this form, and
+(b) the λ sensitivity sweep (results/figures/lambda_sensitivity.png)
+shows the policy is robust to moderate reweighting in our regime.
+See: https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf
 """
 
 from __future__ import annotations
