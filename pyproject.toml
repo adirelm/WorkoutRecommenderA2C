@@ -41,6 +41,8 @@ ignore = ["E501"]    # line-length is handled by formatter
 # equipment, min_minutes, max_minutes) — refactoring into a dataclass deferred to keep
 # the public API straightforward for the SDK layer.
 "src/data/program_filter.py" = ["PLR0913"]
+# torch.nn.functional as F is the universal PyTorch convention.
+"src/model/policy_net.py" = ["N812"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
