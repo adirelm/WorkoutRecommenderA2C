@@ -9,8 +9,9 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 
 ## 2 — Architect the solution
 - [PLAN.md](PLAN.md) — Architecture, C4-Container mermaid diagram, 10-phase build sequence, ADR pointers.
-- [adr/](adr/) — 7 Architecture Decision Records (hybrid SDK + analysis-notebook, state, reward, action masking, terminal conditions, Streamlit GUI, and ADR-007 documenting the NA path for the V3 §5 ApiGatekeeper requirement).
+- [adr/](adr/) — 8 Architecture Decision Records (hybrid SDK + analysis-notebook, state, reward, action masking, terminal conditions, Streamlit GUI, ADR-007 documenting the NA path for the V3 §5 ApiGatekeeper requirement, and ADR-008 recording the LSTM world-model simplifications vs Ha & Schmidhuber 2018).
 - [adr/ADR-007-no-api-gatekeeper.md](adr/ADR-007-no-api-gatekeeper.md) — V3 §5 NA justification: A3 has no rate-limited inference endpoint and only one one-shot Kaggle CLI invocation.
+- [adr/ADR-008-lstm-world-model-simplifications.md](adr/ADR-008-lstm-world-model-simplifications.md) — three intentional departures from Ha & Schmidhuber 2018 (deterministic MSE head, rolling 7-step hidden, learned action embedding).
 
 ## 3 — Theory↔Code contract
 - [THEORY.md](THEORY.md) — Brief's 12 equations transcribed verbatim in LaTeX, each cross-linked to the src/ file that implements it.

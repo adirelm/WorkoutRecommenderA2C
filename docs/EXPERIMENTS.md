@@ -49,3 +49,7 @@ All experiments are seeded via src/utils/seeding.set_global_seed; the seeded det
 1. Does training the LSTM on a multi-program mixture (not just PHUL) improve generalisation? Not tested.
 2. How sensitive is A2C's stability to the actor_lr/critic_lr ratio? Defaults pick 3e-4 / 1e-3; sweep is open work.
 3. Does Action Masking change the policy's eventual fixed point, or only the trajectory? Theory ([8]) says no for the fixed-policy distribution but the gradient direction changes — open empirical question.
+
+## §6 Program attribution note
+
+PHUL (Power Hypertrophy Upper Lower) was popularised by Brandon Campbell on bodybuilding.com c.2014. It is **not** a Layne Norton programme (Norton authored PHAT, a different upper/lower/power/hypertrophy hybrid). Verified by grep on 2026-05-31: no "Norton", "Layne", or "Campbell" attributions appear in any tracked file, so this repo carries no incorrect author claim. The PHUL label is used purely as the Kaggle-row title for the synthetic trainee programme; we deliberately do not attribute it inline, since the agent's behaviour depends on the row contents, not the author.
