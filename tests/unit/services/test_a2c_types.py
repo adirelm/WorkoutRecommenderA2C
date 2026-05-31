@@ -10,7 +10,7 @@ import yaml
 
 from src.services.a2c_types import A2CConfig, A2CHistory
 
-_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "config.yaml"
+_CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "config.yaml"
 
 
 def test_a2c_config_defaults_match_config_yaml():
