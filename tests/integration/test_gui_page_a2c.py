@@ -35,23 +35,26 @@ def _slider_by_label(app: AppTest, label: str):
 
 
 def test_sidebar_sliders_present_with_expected_ranges():
-    """Sidebar must expose the 7 documented A2C hyperparameter controls with §7.5 ranges."""
+    """Sidebar must expose the documented A2C hyperparameter controls with §7.5 ranges."""
     app = _fresh_app().run()
     assert not app.exception, f"page raised on initial render: {app.exception}"
 
-    episodes = _slider_by_label(app, "episodes")
+    episodes = _slider_by_label(app, "Training episodes")
     assert (episodes.min, episodes.max, episodes.step) == (5, 200, 5)
 
-    for lr_label in ("actor_lr", "critic_lr"):
+    for lr_label in ("Actor learning rate", "Critic learning rate"):
         sl = _slider_by_label(app, lr_label)
         assert sl.min == pytest.approx(1e-4) and sl.max == pytest.approx(1e-2)
 
-    entropy = _slider_by_label(app, "entropy_coef")
+    entropy = _slider_by_label(app, "Entropy bonus coefficient β")
     assert math.isclose(entropy.min, 0.0) and math.isclose(entropy.max, 0.1)
-    clip = _slider_by_label(app, "grad_clip_norm")
+    clip = _slider_by_label(app, "Gradient clip")
     assert clip.min == pytest.approx(0.1) and clip.max == pytest.approx(2.0)
 
-    for label in ("actor_hidden", "critic_hidden"):
+    gamma = _slider_by_label(app, "Discount factor γ")  # noqa: RUF001
+    assert gamma.min == pytest.approx(0.9) and gamma.max == pytest.approx(0.999)
+
+    for label in ("Actor hidden width", "Critic hidden width"):
         hidden = _slider_by_label(app, label)
         assert {int(o) for o in hidden.options} >= {32, 64, 128, 256}
 
@@ -68,7 +71,7 @@ def test_train_click_populates_metric_row_and_session_state():
     app = _fresh_app()
     app.run()
     # Shrink the run to the minimum (5 episodes) so the test stays fast.
-    _slider_by_label(app, "episodes").set_value(5)
+    _slider_by_label(app, "Training episodes").set_value(5)
     app.run()
 
     train_btn = next(b for b in app.button if b.label == "Train A2C")
@@ -78,10 +81,10 @@ def test_train_click_populates_metric_row_and_session_state():
 
     # Metric row: 5 KPI metrics must all be present with finite numeric values.
     metric_labels = {m.label for m in app.metric}
-    expected = {"episodes_run", "final_reward", "final_actor_loss", "final_critic_loss", "mean_advantage"}
+    expected = {"Episodes run", "Final reward", "Final actor loss", "Final critic loss", "Mean advantage"}
     assert expected <= metric_labels, f"missing KPIs: {expected - metric_labels}"
     for m in app.metric:
-        if m.label in {"final_reward", "final_actor_loss", "final_critic_loss", "mean_advantage"}:
+        if m.label in {"Final reward", "Final actor loss", "Final critic loss", "Mean advantage"}:
             assert math.isfinite(float(m.value.lstrip("+"))), m
 
     # Cross-page singleton must be populated for compare/recommend pages to reuse.

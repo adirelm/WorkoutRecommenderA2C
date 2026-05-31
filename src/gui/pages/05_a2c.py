@@ -80,11 +80,11 @@ def _render_final_metrics() -> None:
     mean_adv = sum(history.advantages_mean) / len(history.advantages_mean) if history.advantages_mean else 0.0
     metric_row(
         {
-            "episodes_run": f"{history.episodes_run}",
-            "final_reward": f"{history.rewards[-1]:+.2f}",
-            "final_actor_loss": f"{history.actor_losses[-1]:+.4f}",
-            "final_critic_loss": f"{history.critic_losses[-1]:.4f}",
-            "mean_advantage": f"{mean_adv:+.4f}",
+            "Episodes run": f"{history.episodes_run}",
+            "Final reward": f"{history.rewards[-1]:+.2f}",
+            "Final actor loss": f"{history.actor_losses[-1]:+.4f}",
+            "Final critic loss": f"{history.critic_losses[-1]:.4f}",
+            "Mean advantage": f"{mean_adv:+.4f}",
         }
     )
 
