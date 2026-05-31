@@ -35,13 +35,13 @@ _QA: tuple[tuple[str, str, str, str, str], ...] = (
      "ההתאוששות של 48 שעות בין אימוני קבוצות שריר זהות."),
     ("Q2 — Does the policy collapse to one action?", "How we test",
      "Count how often each of the 7 actions was sampled after training. A healthy policy "
-     "spreads mass across >=4 actions; collapse looks like >=80 % on one action.",
+     "spreads mass across ≥ 4 actions; collapse looks like ≥ 80% on one action.",
      "ש2 — האם המדיניות מתמוטטת לפעולה אחת?",
      "במצב בריא, ההתפלגות פרושה על לפחות 4 פעולות. אם פעולה אחת "
      "מקבלת מעל 80% מהדגימות — זה סימן לקריסת מדיניות."),
     ("Q3 — A2C vs REINFORCE stability?", "Hypothesis",
      "The critic baseline reduces gradient variance, so A2C's mean-reward band should be "
-     "narrower (smaller +/- 1 sigma) than REINFORCE's at the same episode count.",
+     "narrower (smaller ± 1 σ) than REINFORCE's at the same episode count.",
      "ש3 — האם A2C יציב יותר מ-REINFORCE?",
      "כן: ה-Critic מקטין את שונות הגרדיאנט, ולכן רצועת ±1 סיגמא של A2C "
      "צרה יותר מזו של REINFORCE באותו מספר אפיזודות."),
@@ -115,7 +115,7 @@ def _action_masking_card() -> None:
     info_card(
         "Proposal",
         "Inject an invalid-action mask before the softmax: "
-        "pi(a|s) = softmax(logits + log(mask)). Illegal actions get -inf logits "
+        "π(a|s) = softmax(logits + log(mask)). Illegal actions get −∞ logits "
         "and contribute zero gradient, so the policy never wastes capacity on them.",
     )
     reference_callout(
