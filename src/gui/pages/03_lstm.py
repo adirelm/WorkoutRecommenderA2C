@@ -27,19 +27,28 @@ _HIDDEN_OPTIONS: tuple[int, ...] = (16, 32, 64, 128)
 _LAYERS_OPTIONS: tuple[int, ...] = (1, 2)
 
 
+_HELP_HIDDEN = "LSTM hidden-state dimension (more = more capacity, slower)."
+_HELP_LAYERS = "Stacked LSTM depth (1 is usually enough for this dataset)."
+_HELP_EPOCHS = "How many full passes over the training windows (best @ N annotation shows the best epoch)."
+_HELP_LR = "Adam learning rate. 1e-3 is the default; smaller = more stable."
+_HELP_WINDOW = "Number of consecutive days per training window."
+
+
 def _sidebar_controls() -> dict[str, float | int]:
     """Render the sidebar hyperparameter widgets and return their values."""
-    st.sidebar.header("LSTM hyperparameters")
-    hidden_size = st.sidebar.select_slider("hidden_size", options=list(_HIDDEN_OPTIONS), value=64)
-    num_layers = st.sidebar.select_slider("num_layers", options=list(_LAYERS_OPTIONS), value=1)
-    epochs = st.sidebar.slider("epochs", min_value=5, max_value=200, value=15, step=5)
-    lr = st.sidebar.select_slider(
-        "lr",
+    sb = st.sidebar
+    sb.header("LSTM Hyperparameters")
+    hidden_size = sb.select_slider("Hidden size", options=list(_HIDDEN_OPTIONS), value=64, help=_HELP_HIDDEN)
+    num_layers = sb.select_slider("Number of layers", options=list(_LAYERS_OPTIONS), value=1, help=_HELP_LAYERS)
+    epochs = sb.slider("Training epochs", min_value=5, max_value=200, value=15, step=5, help=_HELP_EPOCHS)
+    lr = sb.select_slider(
+        "Learning rate",
         options=[1e-4, 3e-4, 1e-3, 3e-3, 1e-2],
         value=1e-3,
         format_func=lambda v: f"{v:.0e}",
+        help=_HELP_LR,
     )
-    window_len = st.sidebar.slider("window_len", min_value=3, max_value=14, value=7, step=1)
+    window_len = sb.slider("Window length (days)", min_value=3, max_value=14, value=7, step=1, help=_HELP_WINDOW)
     return {
         "hidden_size": int(hidden_size),
         "num_layers": int(num_layers),
@@ -122,7 +131,7 @@ def _render_results(history: LSTMTrainHistory) -> None:
 def render() -> None:
     """Render the LSTM training page in full."""
     state = GUIState("lstm")
-    hero("LSTM world model", "§7.3 — recurrent transition model f_φ", icon="🧠")
+    hero("LSTM World Model", "§7.3 — recurrent transition model f_φ", icon="🧠")
     info_card(
         "§7.3 — recurrent world model",
         "The trainee environment is a POMDP; we learn an LSTM f_φ whose hidden "
@@ -135,7 +144,12 @@ def render() -> None:
         label="Equation 14 — supervised LSTM objective",
     )
     params = _sidebar_controls()
-    if st.button("Train LSTM", type="primary", use_container_width=True):
+    if st.button(
+        "Train LSTM",
+        type="primary",
+        use_container_width=True,
+        help="Train the LSTM world model f_φ(s_t, a_t, h_t) → ŝ_{t+1} on the current trainee's trajectory windows.",
+    ):
         _run_training(state, params)
     history = state.get("history")
     if history is not None:
