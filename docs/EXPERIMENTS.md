@@ -19,9 +19,26 @@ Per brief §7.6 (5 discussion questions + Action Masking) and §7.7 (REINFORCE-v
 ## §3 Counterfactuals / What was NOT tested
 
 - **Multi-seed convergence rigor**: only 3 seeds × 30 episodes in compare(); a publication-grade study would need 30+ seeds × 500 episodes.
-- **λ_1, λ_2 sensitivity sweep**: ADR-003 picks defaults (2.0, 1.0) without sweeping the (overload, imbalance) weight plane.
 - **Real Kaggle download**: tests use fixture CSVs; the full 600K-row download was not exercised in CI.
 - **Comparison against random/heuristic baseline**: §7.6 Q3 asks REINFORCE-vs-A2C; we have no random-policy or rotate-chains baseline to anchor the absolute magnitude.
+
+## §3.1 E9 — λ_1 × λ_2 sensitivity pilot (V3 §9.1)
+
+| | |
+|---|---|
+| **Hypothesis** | The reward decomposition `r_t = gain_t − λ_1·overload_t − λ_2·imbalance_t` is sensitive to the (λ_1, λ_2) weighting; sweeping a 3×3 grid produces a measurable shift in REINFORCE's late-window mean reward. |
+| **Setup** | `scripts/run_lambda_sensitivity.py` — λ_1 ∈ {1.0, 2.0, 3.0} × λ_2 ∈ {0.5, 1.0, 2.0}; per cell: train REINFORCE for 20 episodes at seed=42, record the mean of the last 5 episode-rewards. |
+| **Output** | `results/figures/lambda_sensitivity.png` (3×3 heatmap with annotated cell values). |
+| **Result** | Reward shifts monotonically with **λ_2** (imbalance weight): mean drops from +5.48 at λ_2=0.5 to +2.79 at λ_2=2.0 across all λ_1 rows. **λ_1 (overload) shows zero effect** under this short pilot — every column is identical across the three λ_1 values. |
+| **Interpretation** | The λ_2 monotonicity confirms the imbalance term is *active* in the early policy (the agent picks chains that skew the muscle-group distribution, so a heavier λ_2 directly penalises observed behaviour). The dead λ_1 axis says the **overload penalty never fires** at 20 episodes under seed=42 — the synthetic trainee's rolling_7d_volume stays below the `1.2 × baseline_7d_volume` threshold, so `overload_t = 0` regardless of weight. This is a *methodology* finding, not a *policy* finding: it tells us the pilot's episode budget is too short to exercise the overload arm of the reward, and a publication-grade sweep would need either (a) higher baseline drift, (b) longer episodes, or (c) a trainee that occasionally over-prescribes. |
+| **Verdict** | **LIMITED SINGLE-SEED PILOT** — methodology demonstrated; statistical claim not made. The λ_2 axis shows the sweep machinery works; the λ_1 axis is a known dormant dimension at this episode count. |
+
+Reproduce:
+
+```bash
+uv run --active python scripts/run_lambda_sensitivity.py
+# → results/figures/lambda_sensitivity.png   (≈9 s wall-clock)
+```
 
 ## §4 Reproducibility caveats
 
