@@ -15,7 +15,7 @@ def compute_advantages_td(
     dones: Sequence[bool],
     gamma: float = 0.99,
 ) -> list[float]:
-    """Brief eq. 9 / 17: delta_t = r_t + gamma * V(s_{t+1}) * (1 - done_t) - V(s_t)."""
+    """Brief eq. 9 (1-step TD advantage): delta_t = r_t + gamma * V(s_{t+1}) * (1 - done_t) - V(s_t)."""
     if not 0.0 <= float(gamma) <= 1.0:
         raise ValueError(f"gamma must be in [0, 1]; got {gamma}")
     n = len(rewards)
@@ -35,7 +35,10 @@ def actor_loss(
     entropy_coef: float = 0.01,
     entropies: Sequence[torch.Tensor] | None = None,
 ) -> torch.Tensor:
-    """Brief eq. 10: L_actor = -mean(log pi * adv.detach()) - entropy_coef * mean(H(pi))."""
+    """Brief eq. 10 (actor update with TD-advantage) + entropy bonus (separate from eq. 17 advantage def).
+
+    L_actor = -mean(log pi * adv.detach()) - entropy_coef * mean(H(pi)).
+    """
     if len(log_probs) == 0:
         raise ValueError("actor_loss called with empty trajectory")
     if len(log_probs) != len(advantages):
@@ -54,7 +57,7 @@ def critic_loss(
     values: Sequence[torch.Tensor],
     targets: Sequence[float],
 ) -> torch.Tensor:
-    """Brief eq. 12: L_critic = mean((target - V(s))^2). Targets detached."""
+    """Brief eq. 12 (critic MSE): L_critic = mean((target - V(s))^2). Targets detached."""
     if len(values) == 0:
         raise ValueError("critic_loss called with empty trajectory")
     if len(values) != len(targets):
