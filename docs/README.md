@@ -3,7 +3,10 @@
 This directory holds the architect-grade documentation for WorkoutRecommenderA2C (Bar-Ilan Vibe-Coding & RL Workshop, Assignment 3). Read in this order for the cleanest narrative:
 
 ## 1 — Frame the problem
-- [PRD.md](PRD.md) — Product requirements: scope, MDP definition, state/action/reward, F1-F17 acceptance criteria.
+- [PRD.md](PRD.md) — Master product requirements: scope, MDP definition, state/action/reward, F1-F17 acceptance criteria.
+- [prd/PRD-LSTM.md](prd/PRD-LSTM.md) — Per-algorithm PRD for the LSTM world model (V3 §2; F4–F6; derived from PRD.md §3.2).
+- [prd/PRD-REINFORCE.md](prd/PRD-REINFORCE.md) — Per-algorithm PRD for REINFORCE (V3 §2; F7–F9; derived from PRD.md §3.3).
+- [prd/PRD-A2C.md](prd/PRD-A2C.md) — Per-algorithm PRD for synchronous A2C (V3 §2; F10–F12; derived from PRD.md §3.4).
 - [STATE_DESIGN.md](STATE_DESIGN.md) — 12-channel C2_moderate_12d state vector rationale.
 - [ACTION_DESIGN.md](ACTION_DESIGN.md) — 7-action discrete set + masking rules.
 
