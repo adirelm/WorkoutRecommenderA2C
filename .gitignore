@@ -34,6 +34,9 @@ build/
 # Per project rule — must NOT be referenced in shipped docs
 instructions/
 
+# Moodle cover sheet — contains PII (ID card + personal name + self-grade); upload to moodle ONLY, never commit
+adrl-001-ex*.pdf
+
 # Runtime data (regenerated; not version-controlled)
 data/raw/
 data/processed/
