@@ -35,6 +35,14 @@ A3 does NOT implement an ApiGatekeeper. The §5 mandate is treated as NA
   (sdk.SDK class), so an ApiGatekeeper can be wired in as a constructor
   dependency without touching the GUI/CLI layer.
 
+## Amendment (2026-05-31): gh CLI status probe
+src/gui/pages/01_home.py:43 calls `subprocess.run(["gh", "run", "list", ...])`
+to display a live CI status badge. This is a read-only local-process probe
+(not a rate-limited external API): gh CLI uses the user's local auth + caches
+results client-side, and the call is fire-and-forget with try/except fallback
+to "unknown". Same NA rationale as the Kaggle CLI applies. No ApiGatekeeper
+wrap is needed.
+
 ## Alternatives considered
 - (A) Implement full ApiGatekeeper now → rejected: zero traffic to gate,
   pure ceremony, would inflate src/ LOC for no validated need.
