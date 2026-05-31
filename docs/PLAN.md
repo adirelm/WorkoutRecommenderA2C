@@ -37,8 +37,8 @@ C4Container
       Container(svc,     "Services",                          "training · evaluation · masking", "TrainerLSTM, TrainerREINFORCE, TrainerA2C, RolloutEvaluator, ActionMaskService")
       Container(env,     "Environment",                       "LSTM-backed transition model", "WorkoutEnv: reset/step over synthetic trainee · uses LSTM as P(s'|s,a) · 7-action discrete space")
       Container(model,   "Models",                            "torch.nn",                 "LSTMWorldModel · PolicyNet (REINFORCE) · ActorCriticNet (A2C)")
-      Container(data,    "Data layer",                        "pandas · parquet cache",   "KaggleClient · Preprocessor · DailyAggregator (§7.2.4 synthetic trainee builder)")
-      ContainerDb(store, "Local artifacts",                   "filesystem",               "data/raw/*.csv · data/processed/*.parquet · results/checkpoints · results/figures")
+      Container(data,    "Data layer",                        "pandas · CSV direct-read", "KaggleClient · Preprocessor · DailyAggregator (§7.2.4 synthetic trainee builder); parquet caching DEFERRED per PRD F2 — 28-day rollout reads CSV directly")
+      ContainerDb(store, "Local artifacts",                   "filesystem",               "data/raw/*.csv · results/checkpoints · results/figures (no data/processed/*.parquet — F2 deferred)")
     }
 
     System_Ext(kaggle, "Kaggle", "adnanelouardi/600k-fitness-exercise-and-workout-program-dataset (one-time download)")
@@ -79,7 +79,7 @@ PRD under `docs/` and a definition-of-done in `docs/TODO.md`.
 
 | # | Phase | PRDs owned | Definition of Done | Lecture-spec link |
 |---|---|---|---|---|
-| 1 | **Data ingest & cache** | `PRD_data.md` | Kaggle CSVs cached to parquet; tests on schema, row counts, negative-value handling (§7.2.3 caveat); cleaning report emitted to `results/data_quality_report.txt` | §7.2.1–§7.2.3, PRD §1.5.0 |
+| 1 | **Data ingest & cache** | `PRD_data.md` | Kaggle CSVs read directly via Kaggle CLI (parquet caching DEFERRED per PRD F2 — see §3.1); tests on schema, row counts, negative-value handling (§7.2.3 caveat); cleaning report emitted to `results/data_quality_report.txt` | §7.2.1–§7.2.3, PRD §1.5.0 |
 | 2 | **Synthetic-trainee builder** | `PRD_preprocess.md`, `PRD_trajectory.md` | `chosen_program` filter (≥8wk, Full Gym, 45–120min); daily aggregation; `total_volume_t`, `muscle_distribution_t`, `session_duration_t`, `week_index_t`, `day_in_cycle_t`; Rest-Day rows inserted per §7.2.4 | §7.2.4 (eq. 13) |
 | 3 | **LSTM world-model** | `PRD_lstm.md` | `LSTMWorldModel(s_t,a_t,h_t)→ŝ_{t+1}` trains on supervised windows; loss curves logged; checkpoint emitted | §7.3 (eq. 14) |
 | 4 | **Environment wrapper** | `PRD_env.md`, `PRD_action_masking.md` | `WorkoutEnv.reset/step` returns `(s, r, done, info)` over LSTM transitions; rewards via §7.4.2 (eq. 15: `r = gain − λ₁·overload − λ₂·imbalance`); action-masking guardrails (§7.6.1, ADR-004) | §7.4.2, §7.6.1 |
@@ -94,7 +94,7 @@ PRD under `docs/` and a definition-of-done in `docs/TODO.md`.
 
 | Layer | Modules (under `src/workoutrl/`) | Responsibility | Forbidden |
 |---|---|---|---|
-| **data** | `data/kaggle_client.py`, `data/preprocessor.py`, `data/aggregator.py`, `data/cleaning.py` | One-time Kaggle download → parquet cache; build `chosen_program` synthetic-trainee trajectories; data-quality rules (negative-rep drop, time-encoded reps reclassification, rest-day insertion — PRD §1.5.0) | No torch, no RL logic |
+| **data** | `data/kaggle_client.py`, `data/preprocessor.py`, `data/aggregator.py`, `data/cleaning.py` | One-time Kaggle CSV download (kaggle CLI); build `chosen_program` synthetic-trainee trajectories; data-quality rules (negative-rep drop, time-encoded reps reclassification, rest-day insertion — PRD §1.5.0). Parquet caching DEFERRED per PRD F2 — 28-day rollout reads CSV directly. | No torch, no RL logic |
 | **env** | `env/workout_env.py`, `env/reward.py`, `env/action_mask.py` | Gym-like `reset/step`; reward `r = gain − λ₁·overload − λ₂·imbalance` (eq. 15); action-masking (§7.6.1, ADR-004) | No model training; no UI |
 | **model** | `model/lstm_world.py`, `model/policy_net.py`, `model/actor_critic.py` | `nn.Module` definitions only; no training loop | No env access; no I/O |
 | **services** | `services/trainer_lstm.py`, `services/trainer_reinforce.py`, `services/trainer_a2c.py`, `services/evaluator.py`, `services/metrics.py` | Training loops, rollout collection, advantage/return computation, checkpoint I/O | No direct user I/O |
@@ -156,8 +156,8 @@ approach loses the discussion surface the brief grades in §7.6/§7.7.
 ## §6 — Concurrency / state assumptions
 
 **Single-threaded by design**, same as A2. Cost centres are CPU-bound
-(LSTM + policy forward/backward) and trivial I/O (parquet read once
-per session). For a single sequential RL loop at this scale
+(LSTM + policy forward/backward) and trivial I/O (CSV read once
+per session — parquet caching DEFERRED per PRD F2). For a single sequential RL loop at this scale
 (≤a few thousand episodes), multiprocessing/threading adds complexity
 with no real gain and the GIL is not the bottleneck.
 
@@ -240,7 +240,7 @@ shifted).
 
 | # | Date | Phase(s) | Deliverable |
 |---|---|---|---|
-| M1 | **2026-05-31** | P1 — Data ingest & cache | Kaggle CSVs → parquet; schema & data-quality tests green; cleaning report emitted |
+| M1 | **2026-05-31** | P1 — Data ingest & cache | Kaggle CSVs via kaggle CLI (parquet caching DEFERRED per PRD F2); schema & data-quality tests green; cleaning report emitted |
 | M2 | **2026-06-01** | P2 — Synthetic-trainee builder | `chosen_program` daily trajectory; eq. 13 unit test green; rest-day rows present |
 | M3 | **2026-06-02** | P3 — LSTM world-model | `LSTMWorldModel` trained on supervised windows; loss curve checkpointed; reproducibility test green |
 | M4 | **2026-06-03** | P4 — Environment + action mask | `WorkoutEnv.reset/step` green; reward eq. 15 + masking eq. §7.6.1 tested (ADR-004) |
@@ -261,8 +261,9 @@ service after the first Kaggle fetch.
 - Python 3.11+ (managed by `uv`; do **not** install with pip/conda — CLAUDE.md §7)
 - `uv` (`brew install uv` on macOS, `pipx install uv` elsewhere)
 - Kaggle account + `~/.kaggle/kaggle.json` API token (one-time, for
-  the initial CSV download; thereafter the parquet cache is committed
-  and the app runs fully offline)
+  the initial CSV download into `data/raw/`; subsequent runs reuse the
+  cached CSVs and make no network calls — parquet caching DEFERRED per
+  PRD F2, see §3.1)
 - ≈300 MB free disk for the dataset cache + checkpoints
 - (Optional) Apple-Silicon Mac for MPS acceleration, or CUDA GPU
 
