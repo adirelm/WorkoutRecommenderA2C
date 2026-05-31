@@ -53,6 +53,12 @@ def reinforce_loss(
     this matches the OpenAI Spinning Up reference implementation. Both forms
     converge to the same fixed point.
 
+    NOTE: We average over the trajectory (.mean()) rather than sum
+    (.sum()) as the textbook eq 16 prescribes. Both converge to the
+    same fixed point; .mean() rescales the gradient by 1/T which
+    stabilizes batch-size sensitivity. This matches OpenAI Spinning
+    Up's reference implementation (compute_loss in vpg.py).
+
     Args:
         log_probs: per-timestep log π_θ(a_t | s_t) — must be differentiable
             scalar tensors connected to the policy parameters.

@@ -21,6 +21,12 @@ ablations comparing "with vs without baseline".
 from __future__ import annotations
 
 
+# NOTE: We use a state-INDEPENDENT scalar EMA over episodic totals
+# (Williams 1992 "reinforcement comparison"). Sutton-Barto §13.4
+# prefers a learned V(s_t) for tighter variance reduction — both
+# are unbiased; ours is simpler and adequate for a 12-dim, 28-day
+# toy environment. See ADR-008-lstm-world-model-simplifications.md
+# for the broader "simplifications, justified" philosophy.
 class RunningMeanBaseline:
     """Exponential-moving-average estimator of E[G] used by REINFORCE."""
 
