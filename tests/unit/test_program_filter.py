@@ -5,7 +5,12 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.data.program_filter import ProgramNotFoundError, pick_program
+from src.data.program_filter import (
+    SYNTHETIC_PROGRAM_NAME,
+    ProgramNotFoundError,
+    pick_program,
+    pick_program_or_synthetic,
+)
 
 
 def _sample_df() -> pd.DataFrame:
@@ -140,3 +145,28 @@ def test_falls_back_when_primary_time_out_of_range() -> None:
     df = _sample_df()
     df.loc[df["title"] == "PHUL", "time_per_workout"] = 30
     assert pick_program(df) == "GZCLP"
+
+
+# --------------------------------------------------------- synthetic fallback
+# repro-data-fallback: when the Kaggle CLI is unavailable or no candidate
+# passes §7.2.4, pick_program_or_synthetic must swallow the error and surface
+# the synthetic-trainee sentinel instead of raising.
+
+
+def test_synthetic_fallback_returns_sentinel_on_empty_dataset() -> None:
+    """No-Kaggle case: empty df -> 'synthetic_trainee', no raise."""
+    empty = pd.DataFrame(columns=["title", "equipment", "program_length", "time_per_workout"])
+    assert pick_program_or_synthetic(empty) == SYNTHETIC_PROGRAM_NAME
+    assert SYNTHETIC_PROGRAM_NAME == "synthetic_trainee"
+
+
+def test_synthetic_fallback_returns_sentinel_when_all_candidates_fail() -> None:
+    """All §7.2.4 criteria fail -> sentinel, not ProgramNotFoundError."""
+    df = _sample_df()
+    df = df[df["title"] == "Beginner Bodyweight"].reset_index(drop=True)
+    assert pick_program_or_synthetic(df) == SYNTHETIC_PROGRAM_NAME
+
+
+def test_synthetic_fallback_passthrough_when_primary_matches() -> None:
+    """Happy path: real match still returns the real program name."""
+    assert pick_program_or_synthetic(_sample_df()) == "PHUL"

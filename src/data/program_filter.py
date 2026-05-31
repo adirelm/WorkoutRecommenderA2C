@@ -2,13 +2,26 @@
 
 Pick the first program (primary, then fallbacks in order) that exists in
 the dataset AND passes the equipment / length / session-time criteria.
-If none pass, raise ProgramNotFoundError with a full audit trail of why
-each candidate was rejected.
+If none pass, :func:`pick_program` raises :class:`ProgramNotFoundError`
+with a full audit trail of why each candidate was rejected.
+
+Synthetic-trainee fallback (repro-data-fallback).
+When the Kaggle CLI is unavailable, the dataset is empty, or no program
+passes §7.2.4 selection, :func:`pick_program_or_synthetic` swallows the
+``ProgramNotFoundError`` and returns the sentinel program name
+``"synthetic_trainee"``. That sentinel is the same string the SDK uses
+in :meth:`WorkoutSDK.prepare_data` (``LogbookHandle.program_name``), so
+downstream code (``WorkoutEnv`` + :class:`SyntheticTrainee` in
+``src/env/``) handles the no-Kaggle path deterministically with a seeded
+``numpy.random.Generator``. The raising :func:`pick_program` is kept for
+callers that prefer to fail loudly.
 """
 
 from __future__ import annotations
 
 import pandas as pd
+
+SYNTHETIC_PROGRAM_NAME = "synthetic_trainee"
 
 
 class ProgramNotFoundError(LookupError):
@@ -76,3 +89,36 @@ def pick_program(
         f"time in [{min_minutes},{max_minutes}] min).\n"
         "Tried:\n" + "\n".join(failure_report)
     )
+
+
+def pick_program_or_synthetic(
+    programs: pd.DataFrame,
+    primary: str = "PHUL",
+    fallbacks: tuple[str, ...] = ("GZCLP", "nSuns 5/3/1"),
+    min_weeks: int = 8,
+    equipment: str = "Full Gym",
+    min_minutes: int = 45,
+    max_minutes: int = 120,
+) -> str:
+    """Like :func:`pick_program`, but returns ``"synthetic_trainee"`` on miss.
+
+    Closes ``repro-data-fallback``: the Kaggle CLI may be unavailable in CI
+    / grader machines, in which case ``programs`` is empty (or none of the
+    candidates pass §7.2.4). Instead of raising, we surface the sentinel
+    program name the SDK already uses for the seeded synthetic trainee
+    in ``src/env/synthetic_trainee.py`` — downstream consumers (WorkoutEnv,
+    LogbookHandle) read this sentinel and switch to the deterministic
+    transition model without any further branching.
+    """
+    try:
+        return pick_program(
+            programs,
+            primary=primary,
+            fallbacks=fallbacks,
+            min_weeks=min_weeks,
+            equipment=equipment,
+            min_minutes=min_minutes,
+            max_minutes=max_minutes,
+        )
+    except ProgramNotFoundError:
+        return SYNTHETIC_PROGRAM_NAME
