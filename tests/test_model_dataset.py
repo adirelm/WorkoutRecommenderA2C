@@ -82,3 +82,32 @@ def test_split_train_val_chronological():
 def test_window_too_short_returns_empty():
     traj = _make_trajectory(3)
     assert build_windows(traj, window_len=7) == []
+
+
+def test_build_windows_rejects_non_positive_window_len():
+    """Covers dataset.py line 27 — ValueError on window_len <= 0."""
+    import pytest
+
+    traj = _make_trajectory(10)
+    with pytest.raises(ValueError, match="window_len must be positive"):
+        build_windows(traj, window_len=0)
+    with pytest.raises(ValueError, match="window_len must be positive"):
+        build_windows(traj, window_len=-1)
+
+
+def test_split_train_val_zero_val_days_puts_everything_in_train():
+    """Covers dataset.py line 62 — val_days<=0 path."""
+    traj = _make_trajectory(20)
+    windows = build_windows(traj, window_len=7)
+    train, val = split_train_val(windows, val_days=0)
+    assert len(train) == len(windows)
+    assert val == []
+
+
+def test_split_train_val_val_days_at_or_beyond_total_puts_everything_in_val():
+    """Covers dataset.py line 64 — val_days >= len(windows) path."""
+    traj = _make_trajectory(10)
+    windows = build_windows(traj, window_len=7)  # 4 windows
+    train, val = split_train_val(windows, val_days=99)
+    assert train == []
+    assert len(val) == len(windows)
