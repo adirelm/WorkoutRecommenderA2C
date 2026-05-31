@@ -17,7 +17,7 @@ from streamlit.testing.v1 import AppTest
 
 from src.gui.state import get_last_reinforce_history
 
-PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "04_reinforce.py"
+PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "04_reinforce.py"
 TIMEOUT_SEC = 120.0
 
 

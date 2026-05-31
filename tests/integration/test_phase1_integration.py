@@ -16,7 +16,7 @@ from src.data.aggregator import daily_aggregate, insert_rest_days
 from src.data.preprocessor import apply_data_quality_contract
 from src.data.program_filter import pick_program
 
-_FIX = Path(__file__).parent / "fixtures"
+_FIX = Path(__file__).resolve().parents[1] / "fixtures"
 _CYCLE_DAYS = 14
 _FLOAT_TOL = 1e-9
 

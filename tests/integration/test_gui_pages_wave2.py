@@ -28,7 +28,7 @@ import pytest
 # AppTest lives under ``streamlit.testing.v1`` since Streamlit 1.28.
 AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 
-_PAGES_DIR = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages"
+_PAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages"
 _RUN_TIMEOUT_SEC = 10.0
 
 WAVE2_PAGES: tuple[str, ...] = (

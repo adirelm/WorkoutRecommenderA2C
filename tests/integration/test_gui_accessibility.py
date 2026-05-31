@@ -15,7 +15,7 @@ import pytest
 
 AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 
-_REPO = Path(__file__).resolve().parents[1]
+_REPO = Path(__file__).resolve().parents[2]
 _PAGES_DIR = _REPO / "src" / "gui" / "pages"
 _APP_PY = _REPO / "src" / "gui" / "app.py"
 

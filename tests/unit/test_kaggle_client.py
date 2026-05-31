@@ -15,7 +15,7 @@ from src.data.kaggle_client import (
     KaggleCredentialsMissingError,
 )
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 EXPECTED_CSVS = ("fitness_exercises.csv", "program_summary.csv")
 
 

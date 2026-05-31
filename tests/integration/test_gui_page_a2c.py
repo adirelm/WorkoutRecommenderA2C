@@ -17,7 +17,7 @@ from streamlit.testing.v1 import AppTest
 
 from src.gui.state import get_last_a2c_history
 
-PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "05_a2c.py"
+PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "05_a2c.py"
 TIMEOUT_SEC = 180.0
 
 

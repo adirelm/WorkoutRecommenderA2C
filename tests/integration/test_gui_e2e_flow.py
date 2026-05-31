@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 from streamlit.testing.v1 import AppTest
 
-_PAGES_DIR = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages"
+_PAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages"
 _TIMEOUT = 120  # seconds; LSTM-3-epoch + A2C-3-ep fits well under this.
 
 

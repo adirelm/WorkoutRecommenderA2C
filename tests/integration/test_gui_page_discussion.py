@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "10_discussion.py"
+PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "10_discussion.py"
 Q_LABELS = ("Q1", "Q2", "Q3", "Q4", "Q5")
 HEBREW_QS = ("ש1", "ש2", "ש3", "ש4", "ש5")
 

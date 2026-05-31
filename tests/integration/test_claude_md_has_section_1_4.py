@@ -7,7 +7,7 @@ a 3-column table with at least 10 rows, and an 'Operating rule' paragraph.
 import re
 from pathlib import Path
 
-CLAUDE_MD = Path(__file__).resolve().parent.parent / "CLAUDE.md"
+CLAUDE_MD = Path(__file__).resolve().parents[2] / "CLAUDE.md"
 
 
 def _read_claude_md() -> str:

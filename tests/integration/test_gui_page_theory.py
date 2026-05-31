@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "09_theory.py"
+PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "09_theory.py"
 
 
 def _load_theory_page() -> SimpleNamespace:

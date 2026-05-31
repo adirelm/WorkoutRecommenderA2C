@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 _APP_PATH = _REPO_ROOT / "src" / "gui" / "app.py"
 
 EXPECTED_PAGES: tuple[tuple[str, str], ...] = (

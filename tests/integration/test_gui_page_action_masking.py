@@ -31,7 +31,7 @@ from streamlit.testing.v1 import AppTest
 from src.env.action_mask import ActionMaskService
 from src.env.state import ACTION_COUNT, State
 
-_PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "08_action_masking.py"
+_PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "08_action_masking.py"
 _REST_ID, _LEGS_ID, _COND_ID = 0, 3, 5
 
 

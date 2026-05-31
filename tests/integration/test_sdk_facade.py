@@ -99,7 +99,7 @@ def test_recommend_raises_when_no_policy_trained() -> None:
 # ------------------------------------------------------- import discipline
 def test_ui_layers_import_only_from_src_sdk() -> None:
     """UIs (CLI menu, notebooks) MUST only import business logic from src.sdk."""
-    repo = Path(__file__).resolve().parents[1]
+    repo = Path(__file__).resolve().parents[2]
     ui_files = list((repo / "src" / "cli").rglob("*.py")) + list((repo / "notebooks").rglob("*.py"))
     if not ui_files:
         pytest.skip("no UI files to inspect")

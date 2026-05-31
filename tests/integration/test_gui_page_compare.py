@@ -16,7 +16,7 @@ from streamlit.testing.v1 import AppTest
 
 from src.services.comparator import ComparisonResult
 
-PAGE_PATH = Path(__file__).resolve().parents[1] / "src" / "gui" / "pages" / "06_compare.py"
+PAGE_PATH = Path(__file__).resolve().parents[2] / "src" / "gui" / "pages" / "06_compare.py"
 TIMEOUT_SEC = 180.0
 
 

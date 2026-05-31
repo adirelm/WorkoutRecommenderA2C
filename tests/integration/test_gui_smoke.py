@@ -37,7 +37,7 @@ WAVE_1_PAGES: tuple[str, ...] = (
 )
 
 # Resolve relative to the repo root (this file lives in `tests/`).
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _page_path(rel: str) -> Path:
