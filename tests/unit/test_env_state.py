@@ -76,3 +76,42 @@ def test_state_is_frozen() -> None:
 def test_action_count_seven() -> None:
     assert ACTION_COUNT == 7
     assert len(ACTION_NAMES) == 7
+
+
+def test_state_to_array_from_array_round_trip() -> None:
+    """Round-trip preserves all fields (V3 §16 testability + brief §7.1 invariant).
+
+    to_array packs into float32, so the first round-trip narrows precision; once
+    the values live in float32, every subsequent cycle is bit-exact equal.
+    """
+    s = State(
+        fatigue=0.1,
+        soreness_push=0.2,
+        soreness_pull=0.3,
+        soreness_legs=0.4,
+        soreness_core=0.5,
+        readiness=0.6,
+        rolling_7d_volume=7.0,
+        streak_days_trained=8,
+        days_since_last_rest=9,
+        muscle_balance_push_vs_pull=-0.10,
+        adherence_signal=0.11,
+        weekly_progress=0.12,
+    )
+    s2 = State.from_array(s.to_array())
+    # Float fields equal within float32 tolerance; int fields exact.
+    for name in STATE_CHANNEL_NAMES:
+        assert getattr(s2, name) == pytest.approx(getattr(s, name), rel=1e-5, abs=1e-6), (
+            f"Channel {name} drifted"
+        )
+    # After the first to_array → from_array, values already sit on the float32
+    # grid, so 5 further cycles must be bit-exact stable.
+    s_grid = s2
+    for _ in range(5):
+        s2 = State.from_array(s2.to_array())
+    assert s_grid == s2
+
+
+def test_state_from_array_rejects_wrong_shape() -> None:
+    with pytest.raises(ValueError, match="expected shape"):
+        State.from_array(np.zeros(11, dtype=np.float32))

@@ -62,6 +62,26 @@ class State:
         )
 
     @classmethod
+    def from_array(cls, arr: np.ndarray) -> State:
+        """Inverse of to_array — round-trip: State.from_array(s.to_array()) == s."""
+        if arr.shape != (STATE_DIM,):
+            raise ValueError(f"expected shape ({STATE_DIM},), got {arr.shape}")
+        return cls(
+            fatigue=float(arr[0]),
+            soreness_push=float(arr[1]),
+            soreness_pull=float(arr[2]),
+            soreness_legs=float(arr[3]),
+            soreness_core=float(arr[4]),
+            readiness=float(arr[5]),
+            rolling_7d_volume=float(arr[6]),
+            streak_days_trained=int(arr[7]),
+            days_since_last_rest=int(arr[8]),
+            muscle_balance_push_vs_pull=float(arr[9]),
+            adherence_signal=float(arr[10]),
+            weekly_progress=float(arr[11]),
+        )
+
+    @classmethod
     def initial(cls) -> State:
         """A rested baseline: zero fatigue/soreness/streak, readiness=1.0."""
         return cls(
