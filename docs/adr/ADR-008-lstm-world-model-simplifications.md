@@ -54,3 +54,8 @@ identity matrix.
 | Frozen during RL | YES | trainers .eval() + torch.no_grad() |
 | VAE state encoder | NA (state already low-dim) | not applicable |
 | Evolution-strategy controller | NO (we use REINFORCE + A2C policy gradient) | brief §7.4 / §7.5 |
+
+## See also
+- [ADR-007](ADR-007-no-api-gatekeeper.md) — sibling ADR documenting an explicit
+  NA path against a V3 mandate; same "deliberate departure, recorded for the
+  grader" pattern applied here for §7.3.
