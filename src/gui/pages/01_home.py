@@ -72,16 +72,37 @@ def _quick_start(state: GUIState) -> None:
     """Four quick-start buttons that record the intended next page."""
     cols = st.columns(4)
     targets = (
-        ("Go to Data", "data"),
-        ("Go to REINFORCE", "reinforce"),
-        ("Go to A2C", "a2c"),
-        ("Show Theory", "theory"),
+        (
+            "Go to Data",
+            "data",
+            "Jump to §7.2 — data ingestion (PHUL trainee loader + state heatmap).",
+        ),
+        (
+            "Go to REINFORCE",
+            "reinforce",
+            "Jump to §7.4 — Monte-Carlo policy gradient with running-mean baseline.",
+        ),
+        (
+            "Go to A2C",
+            "a2c",
+            "Jump to §7.5 — synchronous advantage actor-critic.",
+        ),
+        (
+            "Go to Theory",
+            "theory",
+            "Show the underlying equations + algorithm walkthrough.",
+        ),
     )
-    for col, (label, target) in zip(cols, targets):
+    for col, (label, target, tip) in zip(cols, targets):
         with col:
-            if st.button(label, use_container_width=True, key=f"qs_{target}"):
+            if st.button(
+                label,
+                use_container_width=True,
+                key=f"qs_{target}",
+                help=tip,
+            ):
                 state.set("next_page", target)
-                st.toast(f"Open the '{target}' tab in the sidebar.", icon="➡️")
+                st.toast(f"Open the '{target}' page in the sidebar.", icon="➡️")
 
 
 def render() -> None:
@@ -99,7 +120,7 @@ def render() -> None:
         "from raw data → world-model → REINFORCE → A2C → comparison.",
     )
 
-    st.subheader("§7.7 deliverable checklist")
+    st.subheader("§7.7 — Deliverable checklist")
     items = _checklist_items()
     done = sum(1 for _, ok, _ in items if ok)
     st.caption(f"{done}/{len(items)} artefacts present on disk.")

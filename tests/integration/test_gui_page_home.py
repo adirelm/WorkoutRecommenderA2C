@@ -31,7 +31,7 @@ EXPECTED_QUICK_START: tuple[str, ...] = (
     "Go to Data",
     "Go to REINFORCE",
     "Go to A2C",
-    "Show Theory",
+    "Go to Theory",
 )
 
 
@@ -63,7 +63,7 @@ def test_home_deliverable_checklist_has_brief_7_7_items(home_app: AppTest) -> No
     """Each §7.7 deliverable label must appear in the rendered markdown."""
     text = _all_markdown_text(home_app)
     subheader_text = "\n".join(sh.value for sh in home_app.subheader)
-    assert "§7.7 deliverable checklist" in subheader_text
+    assert "§7.7 — Deliverable checklist" in subheader_text
     for label in EXPECTED_DELIVERABLES:
         assert label in text, f"missing §7.7 deliverable row: {label!r}"
     # Glyph is either present ('done') or absent ('todo'); at least one of
