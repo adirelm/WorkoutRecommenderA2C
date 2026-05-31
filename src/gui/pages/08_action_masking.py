@@ -38,6 +38,11 @@ _softmax = softmax
 def render() -> None:
     """Entry point invoked by ``st.navigation`` for the action-masking page."""
     hero("Action masking", "§7.6.1 demo - four hard rules over the 7-action head", icon="🛡️")
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Demo the four invalid-action mask rules over the 7-action head "
+            "and compare unmasked vs masked softmax (brief §7.6.1)."
+        )
     info_block()
     state = state_sliders()
     toggles = rule_toggles()

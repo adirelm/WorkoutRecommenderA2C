@@ -113,6 +113,11 @@ def render() -> None:
         subtitle="LSTM world-model + REINFORCE & A2C policies on workout logs.",
         icon="🏋️",
     )
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Landing page with the §7.7 deliverable checklist, repo status, "
+            "and Quick-start nav into Data → LSTM → REINFORCE → A2C."
+        )
     info_card(
         "Assignment context",
         "Bar-Ilan Vibe-Coding & RL Workshop · Assignment 3 (§1.4 architect "

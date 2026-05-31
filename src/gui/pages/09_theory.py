@@ -96,6 +96,11 @@ def main() -> None:
         "docs/THEORY.md rendered inline with KaTeX (brief equations 1–17)",
         icon="📐",
     )
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Algorithm equations + worked derivations — renders docs/THEORY.md "
+            "inline via Streamlit's KaTeX (brief §7.3–§7.5)."
+        )
     _render_sidebar()
     md = _load_theory()
     for kind, text in _split_segments(md):

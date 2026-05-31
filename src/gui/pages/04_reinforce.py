@@ -88,6 +88,11 @@ def _render_final_metrics() -> None:
 def render() -> None:
     """Entry point invoked by ``st.navigation`` for the REINFORCE page."""
     hero("REINFORCE", "Monte-Carlo policy gradient with running-mean baseline", icon="🎯")
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Train the REINFORCE policy gradient with a running-mean baseline "
+            "(brief §7.4); live reward curve + KPI strip below."
+        )
     info_block()
     params = sidebar()
     if st.button(

@@ -139,6 +139,11 @@ def render() -> None:
         subtitle="§7.6 five-question reflection + §7.6.1 Action Masking proposal.",
         icon="📝",
     )
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Brief §7.6.1 reflection — 5 questions on Action Masking with a "
+            "bilingual Hebrew/English echo per question."
+        )
     history = get_last_a2c_history()
     for idx in range(len(_QA)):
         _render_qa(idx, history, state)

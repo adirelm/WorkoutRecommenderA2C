@@ -92,6 +92,11 @@ def _render_final_metrics() -> None:
 def render() -> None:
     """Entry point invoked by ``st.navigation`` for the A2C page."""
     hero("A2C", "Synchronous advantage actor-critic with entropy bonus", icon="⚡")
+    with st.expander("ℹ️ What this page does", expanded=False):
+        st.markdown(
+            "Train synchronous A2C with TD-advantage + entropy bonus "
+            "(brief §7.5); live 3-panel diagnostics chart below."
+        )
     info_block()
     params = sidebar()
     if st.button("Train A2C", type="primary"):
