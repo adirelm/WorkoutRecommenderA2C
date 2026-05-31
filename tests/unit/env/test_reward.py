@@ -10,20 +10,7 @@ from src.env.state import State
 
 def _state(rolling_7d: float = 0.0, weekly_progress: float = 0.0) -> State:
     base = State.initial()
-    return State(
-        fatigue=base.fatigue,
-        soreness_push=base.soreness_push,
-        soreness_pull=base.soreness_pull,
-        soreness_legs=base.soreness_legs,
-        soreness_core=base.soreness_core,
-        readiness=base.readiness,
-        rolling_7d_volume=rolling_7d,
-        streak_days_trained=base.streak_days_trained,
-        days_since_last_rest=base.days_since_last_rest,
-        muscle_balance_push_vs_pull=base.muscle_balance_push_vs_pull,
-        adherence_signal=base.adherence_signal,
-        weekly_progress=weekly_progress,
-    )
+    return State(**{**base.__dict__, "rolling_7d_volume": rolling_7d, "weekly_progress": weekly_progress})
 
 
 _BALANCED = {"push": 0.25, "pull": 0.25, "legs": 0.25, "core": 0.25}

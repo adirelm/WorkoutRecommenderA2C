@@ -134,11 +134,7 @@ def _action_masking_card() -> None:
 def render() -> None:
     """Render the Discussion page (§7.6 + §7.6.1)."""
     state = GUIState("discussion")
-    hero(
-        title="Discussion",
-        subtitle="§7.6 five-question reflection + §7.6.1 Action Masking proposal.",
-        icon="📝",
-    )
+    hero("Discussion", "§7.6 five-question reflection + §7.6.1 Action Masking proposal.", "📝")
     with st.expander("ℹ️ What this page does", expanded=False):
         st.markdown(
             "Brief §7.6.1 reflection — 5 questions on Action Masking with a "

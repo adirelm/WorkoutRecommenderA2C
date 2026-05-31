@@ -6,9 +6,15 @@ import numpy as np
 import torch
 
 from src.env.state import STATE_DIM, State
+from src.env.workout_env import WorkoutEnv
 from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
 from src.sdk.types import UNKNOWN_REWARD, PolicyHandle, WorkoutRecommendation
+from src.services.a2c_trainer import A2CTrainer
+from src.services.a2c_types import A2CConfig, A2CHistory
+from src.services.comparator import ComparisonResult, compare
+from src.services.reinforce_trainer import REINFORCETrainer
+from src.services.types import REINFORCEConfig, REINFORCEHistory
 
 
 def build_policy_handle(
@@ -83,3 +89,31 @@ def recommend_from_net(
         next_state_predicted=(0.0,) * STATE_DIM,
         expected_reward=value,
     )
+
+
+def run_compare_sweep(
+    base_seed: int, seeds: int, episodes: int
+) -> tuple[ComparisonResult, ActorCriticNet, PolicyHandle]:
+    """Run REINFORCE + A2C over N seeds x E episodes; return result + last A2C net/handle."""
+    r_hists: list[REINFORCEHistory] = []
+    a_hists: list[A2CHistory] = []
+    a2c_nets: list[ActorCriticNet] = []
+    a2c_handles: list[PolicyHandle] = []
+    for s in range(int(seeds)):
+        seed = int(base_seed) + s
+        env_r = WorkoutEnv(seed=seed)
+        policy = PolicyNet(seed=seed)
+        r_hists.append(
+            REINFORCETrainer(policy, env_r, REINFORCEConfig(episodes=int(episodes)), seed=seed).train(
+                episodes=int(episodes)
+            )
+        )
+        env_a = WorkoutEnv(seed=seed)
+        ac = ActorCriticNet(seed=seed)
+        a_hist = A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
+            episodes=int(episodes)
+        )
+        a_hists.append(a_hist)
+        a2c_nets.append(ac)
+        a2c_handles.append(build_policy_handle("A2C", a_hist.rewards, a_hist.episodes_run))
+    return compare(r_hists, a_hists), a2c_nets[-1], a2c_handles[-1]

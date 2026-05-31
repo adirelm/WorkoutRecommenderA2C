@@ -1,4 +1,8 @@
-"""Tests for src/data/program_filter.py — brief §7.2.4 selection criteria."""
+"""Tests for src/data/program_filter.py — brief §7.2.4 selection criteria.
+
+Failure-report branch tests + synthetic-fallback tests live in
+test_program_filter_extra.py so this file stays ≤150 LOC.
+"""
 
 from __future__ import annotations
 
@@ -6,10 +10,8 @@ import pandas as pd
 import pytest
 
 from src.data.program_filter import (
-    SYNTHETIC_PROGRAM_NAME,
     ProgramNotFoundError,
     pick_program,
-    pick_program_or_synthetic,
 )
 
 
@@ -89,84 +91,3 @@ def test_error_message_lists_failed_criteria() -> None:
     msg = str(exc_info.value)
     for name in ("PHUL", "GZCLP", "nSuns 5/3/1"):
         assert name in msg, f"Expected '{name}' in error message, got: {msg}"
-
-
-def test_equipment_mismatch_recorded_in_failure_report() -> None:
-    """Branch: row['equipment'] != equipment -> reason appended (line 33-35)."""
-    df = _sample_df()
-    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "equipment"] = "Bodyweight"
-    with pytest.raises(ProgramNotFoundError) as exc_info:
-        pick_program(df, equipment="Full Gym")
-    msg = str(exc_info.value)
-    assert "equipment=" in msg
-    assert "'Bodyweight'" in msg
-    assert "!= required 'Full Gym'" in msg
-
-
-def test_time_below_min_recorded_in_failure_report() -> None:
-    """Branch: minutes < min_minutes -> reason appended (line 42-45)."""
-    df = _sample_df()
-    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"] = 30
-    with pytest.raises(ProgramNotFoundError) as exc_info:
-        pick_program(df, min_minutes=45, max_minutes=120)
-    msg = str(exc_info.value)
-    assert "time_per_workout=30 min outside [45,120]" in msg
-
-
-def test_time_above_max_recorded_in_failure_report() -> None:
-    """Branch: minutes > max_minutes -> reason appended (line 42-45)."""
-    df = _sample_df()
-    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "time_per_workout"] = 180
-    with pytest.raises(ProgramNotFoundError) as exc_info:
-        pick_program(df, min_minutes=45, max_minutes=120)
-    msg = str(exc_info.value)
-    assert "time_per_workout=180 min outside [45,120]" in msg
-
-
-def test_program_length_failure_recorded_in_failure_report() -> None:
-    """Branch: program_length < min_weeks -> reason appended (line 36-39)."""
-    df = _sample_df()
-    df.loc[df["title"].isin(["PHUL", "GZCLP", "nSuns 5/3/1"]), "program_length"] = 4
-    with pytest.raises(ProgramNotFoundError) as exc_info:
-        pick_program(df, min_weeks=8)
-    msg = str(exc_info.value)
-    assert "program_length=4 weeks < min_weeks=8" in msg
-
-
-def test_falls_back_when_primary_has_wrong_equipment() -> None:
-    """PHUL equipment switched -> GZCLP picked (equipment-branch fallback)."""
-    df = _sample_df()
-    df.loc[df["title"] == "PHUL", "equipment"] = "Bodyweight"
-    assert pick_program(df) == "GZCLP"
-
-
-def test_falls_back_when_primary_time_out_of_range() -> None:
-    """PHUL time=30 (< 45) -> GZCLP picked (time-branch fallback)."""
-    df = _sample_df()
-    df.loc[df["title"] == "PHUL", "time_per_workout"] = 30
-    assert pick_program(df) == "GZCLP"
-
-
-# --------------------------------------------------------- synthetic fallback
-# repro-data-fallback: when the Kaggle CLI is unavailable or no candidate
-# passes §7.2.4, pick_program_or_synthetic must swallow the error and surface
-# the synthetic-trainee sentinel instead of raising.
-
-
-def test_synthetic_fallback_returns_sentinel_on_empty_dataset() -> None:
-    """No-Kaggle case: empty df -> 'synthetic_trainee', no raise."""
-    empty = pd.DataFrame(columns=["title", "equipment", "program_length", "time_per_workout"])
-    assert pick_program_or_synthetic(empty) == SYNTHETIC_PROGRAM_NAME
-    assert SYNTHETIC_PROGRAM_NAME == "synthetic_trainee"
-
-
-def test_synthetic_fallback_returns_sentinel_when_all_candidates_fail() -> None:
-    """All §7.2.4 criteria fail -> sentinel, not ProgramNotFoundError."""
-    df = _sample_df()
-    df = df[df["title"] == "Beginner Bodyweight"].reset_index(drop=True)
-    assert pick_program_or_synthetic(df) == SYNTHETIC_PROGRAM_NAME
-
-
-def test_synthetic_fallback_passthrough_when_primary_matches() -> None:
-    """Happy path: real match still returns the real program name."""
-    assert pick_program_or_synthetic(_sample_df()) == "PHUL"

@@ -19,7 +19,7 @@ from src.env.state import ACTION_COUNT, ACTION_NAMES, STATE_DIM, State
 from src.env.workout_env import WorkoutEnv
 from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
-from src.sdk.sdk_helpers import build_policy_handle, recommend_from_net
+from src.sdk.sdk_helpers import build_policy_handle, recommend_from_net, run_compare_sweep
 from src.sdk.types import (
     LogbookHandle,
     PolicyHandle,
@@ -27,11 +27,11 @@ from src.sdk.types import (
     WorldModelHandle,
 )
 from src.services.a2c_trainer import A2CTrainer
-from src.services.a2c_types import A2CConfig, A2CHistory
+from src.services.a2c_types import A2CHistory
 from src.services.base_trainer import BaseTrainer
-from src.services.comparator import ComparisonResult, compare
+from src.services.comparator import ComparisonResult
 from src.services.reinforce_trainer import REINFORCETrainer
-from src.services.types import REINFORCEConfig, REINFORCEHistory
+from src.services.types import REINFORCEHistory
 from src.utils.config_loader import get_version
 
 
@@ -106,30 +106,12 @@ class WorkoutSDK:
     # ----------------------------------------------------------- comparison
     def compare(self, seeds: int = 3, episodes: int = 5) -> ComparisonResult:
         """Run both REINFORCE + A2C over N seeds x E episodes, return mean ± std bands. Brief §7.6."""
-        r_hists: list[REINFORCEHistory] = []
-        a_hists: list[A2CHistory] = []
-        a2c_nets: list[ActorCriticNet] = []
-        a2c_handles: list[PolicyHandle] = []
-        for s in range(int(seeds)):
-            seed = self.seed + s
-            env_r = WorkoutEnv(seed=seed)
-            policy = PolicyNet(seed=seed)
-            r_hists.append(
-                REINFORCETrainer(policy, env_r, REINFORCEConfig(episodes=int(episodes)), seed=seed).train(
-                    episodes=int(episodes)
-                )
-            )
-            env_a = WorkoutEnv(seed=seed)
-            ac = ActorCriticNet(seed=seed)
-            a_hist = A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
-                episodes=int(episodes)
-            )
-            a_hists.append(a_hist)
-            a2c_nets.append(ac)
-            a2c_handles.append(build_policy_handle("A2C", a_hist.rewards, a_hist.episodes_run))
-        self._last_net = a2c_nets[-1]
-        self._last_policy_handle = a2c_handles[-1]
-        return compare(r_hists, a_hists)
+        result, last_net, last_handle = run_compare_sweep(
+            base_seed=self.seed, seeds=int(seeds), episodes=int(episodes)
+        )
+        self._last_net = last_net
+        self._last_policy_handle = last_handle
+        return result
 
     # ----------------------------------------------------------- recommend
     def recommend(

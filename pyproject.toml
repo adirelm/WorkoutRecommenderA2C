@@ -56,12 +56,14 @@ ignore = ["E501"]    # line-length is handled by formatter
 # Screenshot helper does Playwright import lazily so the script remains importable
 # in environments without Playwright. Unicode × in the docstring is intentional.
 "scripts/capture_gui_screenshots.py" = ["PLC0415", "PLR2004", "RUF002"]
+"scripts/_capture_helpers.py" = ["PLC0415", "PLR2004", "RUF002"]
 # Sensitivity-sweep script: math glyphs (×, λ) in docstrings/comments/strings are intentional.
 "scripts/run_lambda_sensitivity.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
 # LR-sweep script: math glyphs (×, σ) in docstrings/comments/strings are intentional.
 "scripts/run_lr_sweep.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
 # Seeded comparison script: math glyphs (×, σ, ±) in docstrings/comments/strings are intentional.
 "scripts/run_seeded_comparison.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
+"scripts/_seeded_comparison_helpers.py" = ["RUF001", "RUF002", "RUF003", "PLR2004", "PLR0913"]
 # Streamlit GUI helpers: zip(strict=) noise on st.columns iteration is not worth the churn.
 "src/gui/components.py" = ["B905"]
 "src/gui/state.py" = ["SIM118"]  # st.session_state.keys() is the documented Streamlit API
