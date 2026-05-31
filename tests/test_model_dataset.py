@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from src.env.state import STATE_DIM, State
 from src.model.dataset import build_windows, split_train_val
@@ -86,8 +87,6 @@ def test_window_too_short_returns_empty():
 
 def test_build_windows_rejects_non_positive_window_len():
     """Covers dataset.py line 27 — ValueError on window_len <= 0."""
-    import pytest
-
     traj = _make_trajectory(10)
     with pytest.raises(ValueError, match="window_len must be positive"):
         build_windows(traj, window_len=0)
