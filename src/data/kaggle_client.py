@@ -28,7 +28,7 @@ _SETUP_HINT = (
     "~/.kaggle/kaggle.json (chmod 600) or export KAGGLE_USERNAME and "
     "KAGGLE_KEY. See https://www.kaggle.com/docs/api#authentication."
 )
-_CLI_HINT = "kaggle CLI not found on PATH. Run `uv sync` or `pip install kaggle`, then re-run."
+_CLI_HINT = "kaggle CLI not found on PATH. Run `uv sync` (see README.md for setup), then re-run."
 
 
 class KaggleCredentialsMissingError(RuntimeError):

@@ -81,13 +81,13 @@ is cut.
 | TR9 | Transcript / grading_hints | Future lectures workshop-style — schedule accordingly. | docs/PLAN.md (schedule section) | n/a | NICE |
 | TR10 | Transcript / grading_hints | ANALYSIS SECTION (§7.6) matters — graphs + comparison beyond "does it run". | docs/ANALYSIS.md + results/figures/*.png | test_analysis_artifacts_exist | MUST |
 | A1A1 | A1 avoid | Do NOT express strong/unqualified confidence in self-assessment — be honest about limitations. | README §Self-Assessment + docs/REFLECTION.md (limitations) | n/a | MUST |
-| A1A2 | A1 avoid | Do NOT submit only the polished final — include thinking process, abandoned approaches, negative results. | docs/PROMPTS.md (multi-pass narrative + dead-ends) | n/a | MUST |
+| A1A2 | A1 avoid | Do NOT submit only the polished final — include thinking process, abandoned approaches, negative results. | docs/shared/PROMPTS.md (multi-pass narrative + dead-ends) | n/a | MUST |
 | A1A3 | A1 avoid | Include AI tooling cost (tokens, subscription share, dev hours, AI-rework tax) not just cloud. | docs/COST_ANALYSIS.md | test_cost_analysis_has_ai_tooling_section | MUST |
 | A1A4 | A1 avoid | Show automated enforcement (CI, pre-commit, lint gates, coverage gates) — not manual review. | .github/workflows/ci.yml + .pre-commit-config.yaml | test_ci_runs_lint_and_coverage_gate | MUST |
 | A1A5 | A1 avoid | Explicitly demonstrate separation of concerns + extensibility for a new dev. | docs/ARCHITECTURE.md (layer diagram) + ADRs | test_module_boundaries_no_crosslayer_imports | MUST |
 | A1A6 | A1 avoid | Answer each generic rubric bullet with concrete project-specific evidence. | docs/RUBRIC_SELFCHECK.md (per-bullet evidence) | n/a | MUST |
 | A1A7 | A1 avoid | Do NOT erode the six praised areas (planning, docs, config/security, testing, UI/UX, version mgmt). | README + docs/PLAN.md + config/config.yaml + tests/ + ui/ + CHANGELOG.md | test_six_praised_areas_smoke | MUST |
-| A1A8 | A1 avoid | PROMPTS.md must show human judgment, pushback, caught mistakes, redesigns — not passive transcript. | docs/PROMPTS.md (annotated decisions) | n/a | MUST |
+| A1A8 | A1 avoid | PROMPTS.md must show human judgment, pushback, caught mistakes, redesigns — not passive transcript. | docs/shared/PROMPTS.md (annotated decisions) | n/a | MUST |
 | A1R1 | A1 repeat | Keep PRD/ADR-style artifacts enabling independent onboarding. | docs/PRD.md + docs/adr/*.md | n/a | MUST |
 | A1R2 | A1 repeat | Maintain professional README/setup/usage docs. | README.md (setup, usage, results) | n/a | MUST |
 | A1R3 | A1 repeat | Externalized config (config.yaml), secrets discipline, multi-environment. | config/config.yaml + .env.example + docs/SECURITY.md | test_no_secrets_in_repo | MUST |

@@ -18,7 +18,7 @@ This directory holds the architect-grade documentation for WorkoutRecommenderA2C
 
 ## 4 — Build trail
 - [TODO.md](TODO.md) — 53 phase-tagged tasks with definition-of-done per row.
-- [PROMPTS.md](PROMPTS.md) — Architect↔implementer evidence trail (Phase 0 → Phase 8) — the §1.4 contract in audit form.
+- [PROMPTS.md](shared/PROMPTS.md) — Architect↔implementer evidence trail (Phase 0 → Phase 8) — the §1.4 contract in audit form.
 
 ## 5 — Cost + experiments
 - [COST_ANALYSIS.md](COST_ANALYSIS.md) — Token-spend table across all phases + per-deliverable amortisation.

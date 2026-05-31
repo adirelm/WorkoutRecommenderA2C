@@ -79,7 +79,7 @@ linkable home.
 - [THEORY](docs/THEORY.md) — twelve load-bearing equations from the brief,
   transcribed verbatim with `src/` → test → paper mapping
 - [TRACE](docs/TRACE.md) — requirement → code → test traceability matrix
-- [PROMPTS](docs/PROMPTS.md) — literal prompts used during AI-implementer
+- [PROMPTS](docs/shared/PROMPTS.md) — literal prompts used during AI-implementer
   generation (Vibe-Coding workshop deliverable)
 
 **Design notes**
@@ -333,7 +333,7 @@ generation, refactoring inside a public API, test scaffolding from a written
 spec, docstring drafts, and lint auto-fixes are **AI-delegated**.
 
 The literal AI prompts used to produce the code are committed in
-[`docs/PROMPTS.md`](docs/PROMPTS.md) — that file plus the per-section commit
+[`docs/shared/PROMPTS.md`](docs/shared/PROMPTS.md) — that file plus the per-section commit
 messages (which name the brief § they address) is the audit trail.
 
 ---

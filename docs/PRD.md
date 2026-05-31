@@ -2,7 +2,7 @@
 
 The project-wide requirements document for Assignment 3 of the Bar-Ilan
 Vibe Coding Workshop. Per-component design lives in `PLAN.md`; the literal
-prompts and AI workflow live in `PROMPTS.md`; the phased task list with
+prompts and AI workflow live in `shared/PROMPTS.md`; the phased task list with
 definition-of-done lives in `TODO.md`.
 
 > Teaching artefact, **not medical or training advice**. Synthetic trainee, offline
@@ -563,7 +563,7 @@ implementation detail behind `TrainingSDK.train_reinforce()`.
 ### Project documents
 - `CLAUDE.md` — global coding standards + §1.4 architect/implementer contract.
 - `PLAN.md` — architecture, ADRs, module-level design.
-- `PROMPTS.md` — the literal prompts and AI-workflow narrative.
+- `shared/PROMPTS.md` — the literal prompts and AI-workflow narrative.
 - `TODO.md` — phased task list with definition-of-done.
 - `docs/THEORY.md` — verbatim LaTeX equations 1, 2, 4, 7, 8, 9, 10, 11, 12,
   15, 16, 17 from the brief.

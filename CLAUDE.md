@@ -43,7 +43,7 @@ a quality gate, choose between two architectures), the human must sign off
 explicitly *before* the code lands — typically by approving the PRD/PLAN edit
 first, *then* letting the AI execute against it.
 
-This contract is also evidenced in `docs/PROMPTS.md` (the literal prompts used)
+This contract is also evidenced in `docs/shared/PROMPTS.md` (the literal prompts used)
 and in the per-section commit messages that name the § of the submission
 guidelines being addressed.
 

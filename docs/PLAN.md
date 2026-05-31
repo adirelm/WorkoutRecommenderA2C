@@ -335,7 +335,7 @@ sized so each one is a single ≤150-LOC focused diff the human can
 sign off in one read — which is the CLAUDE.md §1.4 architect-implementer
 boundary in practice. Each workflow ends in **one** TDD commit so the
 git history reads as five meaningful steps, not fifty noise commits;
-the per-agent spec lives in `docs/PROMPTS.md` (the literal prompt log)
+the per-agent spec lives in `docs/shared/PROMPTS.md` (the literal prompt log)
 so the per-agent trail is still auditable from the commit message.
 
 **Definition of Done for §11 (Phase 9).**
@@ -344,6 +344,6 @@ so the per-agent trail is still auditable from the commit message.
 - `uv run ruff check src/workoutrl/gui/ tests/gui/` zero violations.
 - Every file in `src/workoutrl/gui/` ≤ 150 LOC.
 - `tests/gui/test_sdk_boundary.py` proves zero direct env/model/services imports.
-- `docs/PROMPTS.md` records the literal prompt used for each of A1–A50.
+- `docs/shared/PROMPTS.md` records the literal prompt used for each of A1–A50.
 - `docs/adr/ADR-005-gui-streamlit.md` documents the Streamlit-over-Tkinter decision and references this §11.
 - A screenshot per page committed under `docs/assets/gui/` for the README gallery.
