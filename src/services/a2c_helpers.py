@@ -40,6 +40,7 @@ def actor_loss(
         raise ValueError("actor_loss called with empty trajectory")
     if len(log_probs) != len(advantages):
         raise ValueError("log_probs and advantages length mismatch")
+    # adv is built from Python floats → detached-by-construction; explicit cast for clarity
     adv = torch.tensor(list(advantages), dtype=torch.float32, device=log_probs[0].device)
     stacked = torch.stack(list(log_probs))
     pg_loss = -(stacked * adv).mean()

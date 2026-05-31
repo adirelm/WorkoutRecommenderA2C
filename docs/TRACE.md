@@ -42,7 +42,7 @@ is cut.
 | 1.4 | Brief §1 | מקומי מול מצטבר: RNN/LSTM/Transformer; POMDP; רצף תצפיות h_t; "מודלי עולם" שאליהם נחזור בפרק 7. | docs/THEORY.md §1.4 + src/model/lstm_world.py | tests/test_lstm_world.py::test_forward_output_shape | MUST |
 | 2.1 | Brief §2 | תהליך האימון: אפיזודה מתחילה ברשת מאותחלת אקראית; דגימת פעולה לפי הסתברויות; שיפור עד סוף האפיזודה. | src/services/reinforce_trainer.py (episode loop) | test_episode_loop_random_init_sample_update | MUST |
 | 2.2 | Brief §2 | מתי נגמרת אפיזודה: (1) הגעתי לפרס, (2) נכשלתי, (3) נגמרו המצבים. MDP timeout only — cases (1) and (2) collapsed per ADR-005 (no scalar reward target; action-masking in ADR-004 prevents injury-equivalent failure events). | src/env/workout_env.py (case 3 only) + docs/adr/ADR-005-terminal-conditions.md | test_done_after_episode_length_steps + test_action_mask_prevents_injury_event (case-1 N/A — see ADR-005) | MUST |
-| 2.3 | Brief §2 | קרדיט משותף — סך הניקוד מהאפיזודה מחולק לכל הפעולות שלאורכה. | src/training/credit_assignment.py | test_return_propagated_to_all_steps | MUST |
+| 2.3 | Brief §2 | קרדיט משותף — סך הניקוד מהאפיזודה מחולק לכל הפעולות שלאורכה. | src/services/reinforce_helpers.py (compute_returns) | test_return_propagated_to_all_steps | MUST |
 | 2.4 | Brief §2 | θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t) G_t — REINFORCE update. | src/services/reinforce_helpers.py + src/services/reinforce_trainer.py | test_reinforce_gradient_update_matches_formula | MUST |
 | 2.5 | Brief §2 | טריק נגזרת הלוג: ∇p = p ∇log p; model-free sample-based estimator. | docs/THEORY.md §2.5 (derivation) | test_log_derivative_identity_numerically | MUST |
 | 2.6 | Brief §2 | הקשר ל-Cross Entropy: One-Hot של הפעולה שנדגמה; ההפרש מוכפל ב-G_t. | src/services/reinforce_helpers.py (weighted CE) | test_reinforce_loss_equals_weighted_cross_entropy | MUST |
@@ -62,7 +62,7 @@ is cut.
 | DA3 | Brief §7.4.3 Part D | REINFORCE training Loss curve + avg-return graph + weekly-load variance diagnostic | results/reinforce_rewards.png + results/reinforce_variance.png + notebooks/analysis.ipynb cell 5 — DEFERRED TO PHASE 7 (analysis notebook) | test_reinforce_reward_chart_exists | MUST |
 | DA4 | Brief §7.5.1 Part E | A2C actor+critic Loss curves + side-by-side REINFORCE vs A2C comparison | results/a2c_training.png + results/comparison.png + notebooks/analysis.ipynb cells 7-8 | test_a2c_and_comparison_charts_exist | MUST |
 | DA5 | Brief §7.7 | Submission-list roll-up: preprocessing code + trainee trajectory + LSTM impl + REINFORCE impl + A2C impl + summary discussion | tests/test_submission_manifest.py asserts each artefact path | test_submission_manifest_all_present | MUST |
-| DA6 | Brief eq. 15 + eq. 17 | Reward eq.15 unit-test + Advantage eq.17 unit-test (first-class binding, not buried in ADR) | src/env/reward.py + src/training/a2c.py | test_spec_eq15_reward_decomposition + test_spec_eq17_advantage | MUST |
+| DA6 | Brief eq. 15 + eq. 17 | Reward eq.15 unit-test + Advantage eq.17 unit-test (first-class binding, not buried in ADR) | src/env/reward.py + src/services/a2c_trainer.py | test_spec_eq15_reward_decomposition + test_spec_eq17_advantage | MUST |
 | Q1 | Brief §7.6 Q1 | Did the LSTM learn realistic temporal structure? | notebooks/analysis.ipynb §discussion-q1 + docs/EXPERIMENTS.md | n/a (doc artifact) | MUST |
 | Q2 | Brief §7.6 Q2 | Does the policy collapse to a small action subset? | notebooks/analysis.ipynb §discussion-q2 — action histogram | test_action_diversity_above_floor | MUST |
 | Q3 | Brief §7.6 Q3 | Did A2C outperform REINFORCE (stability/convergence)? | notebooks/analysis.ipynb §discussion-q3 (REINFORCE vs A2C side-by-side) | n/a | MUST |
@@ -168,3 +168,7 @@ Path: TRACE planned `src/world_model/` but as-built layout is `src/model/` for a
 ## Phase-4 freshness sweep (2026-05-31)
 
 The Phase-4 build placed PolicyNet under `src/model/` and the REINFORCE trainer + helpers under `src/services/` (rather than the planned `src/policy/` + `src/training/` paths). Updated rows: TR5, TR6, 2.1, 2.4, 2.6, 2.7, 3.2. Three filename collapses: `reinforce_update.py` + `loss.py` → `src/services/reinforce_helpers.py` (rows 2.4, 2.6, 2.7). DA3 explicitly deferred to Phase 7. TR3/TR4 closed.
+
+## Phase-5 freshness sweep (2026-05-31)
+
+Phase 5 placed Actor-Critic under `src/model/actor_critic.py` and A2C trainer/helpers/comparator under `src/services/` (not the planned `src/training/` paths). Updated rows: 2.3 (credit assignment now in reinforce_helpers + a2c_helpers), DA6 (eq.17 advantage now in src/services/a2c_helpers.py::compute_advantages_td), TR1 (REINFORCE-vs-A2C side-by-side now in src/services/comparator.py with ComparisonResult dataclass). DA4 (REINFORCE-vs-A2C comparison chart + notebook cell 7-8) explicitly DEFERRED TO PHASE 7 (analysis notebook).

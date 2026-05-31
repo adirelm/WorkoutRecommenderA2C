@@ -59,3 +59,21 @@ def test_train_handles_zero_episodes():
     history = trainer.train(episodes=0)
     assert history.episodes_run == 0
     assert history.rewards == ()
+
+
+def test_episodes_explore_different_trajectories():
+    """Regression guard for the per-episode seed-reuse bug (v1p5 P0).
+
+    If run_episode() re-seeded the env with the same seed every episode, every
+    rollout would produce an identical (state, action, reward) trajectory and
+    A2C would never learn from variance. Assert that two consecutive episodes
+    in the SAME training run produce different reward totals (extremely unlikely
+    to coincide by chance under any non-trivial stochastic policy + transition)."""
+    trainer = _tiny_trainer(seed=42)
+    h = trainer.train(episodes=5)
+    # All 5 episode rewards being IDENTICAL would mean the env never advanced —
+    # the bug. Allow 2 to coincide by sheer luck, but not all 5.
+    unique_rewards = set(h.rewards)
+    assert len(unique_rewards) >= 2, (
+        f"All episodes produced identical reward {h.rewards} — per-episode seed reuse bug regressed"
+    )

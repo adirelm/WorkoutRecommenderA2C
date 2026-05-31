@@ -38,17 +38,22 @@ class A2CTrainer:
             lr=self.config.critic_lr,
         )
 
-    def run_episode(self) -> tuple[list, list, list, list, list, list]:
-        """Roll out one episode. Returns (states, actions, rewards, log_probs, values, dones)."""
-        self.env.reset(seed=self.seed)
+    def run_episode(self) -> tuple[list, list, list, list, list, list, list]:
+        """Roll out one episode.
+
+        Returns (states, actions, rewards, log_probs, values, dones, entropies).
+        Env is re-seeded ONCE in __init__; subsequent resets advance the env RNG
+        naturally so each episode samples a fresh trajectory.
+        """
         states: list = []
         actions: list[int] = []
         rewards: list[float] = []
         log_probs: list[torch.Tensor] = []
         values: list[torch.Tensor] = []
         dones: list[bool] = []
+        entropies: list[torch.Tensor] = []
         done = False
-        s = self.env.reset(seed=self.seed)
+        s = self.env.reset()
         while not done:
             state_t = torch.as_tensor(s.to_array(), dtype=torch.float32)
             mask = torch.as_tensor(self.env.action_mask(), dtype=torch.bool)
@@ -57,6 +62,7 @@ class A2CTrainer:
             dist = Categorical(logits=masked)
             action = dist.sample()
             log_prob = dist.log_prob(action)
+            entropy = dist.entropy()
             s, r, done, _ = self.env.step(int(action.item()))
             states.append(state_t)
             actions.append(int(action.item()))
@@ -64,7 +70,8 @@ class A2CTrainer:
             log_probs.append(log_prob)
             values.append(value)
             dones.append(bool(done))
-        return states, actions, rewards, log_probs, values, dones
+            entropies.append(entropy)
+        return states, actions, rewards, log_probs, values, dones, entropies
 
     def train(self, episodes: int | None = None) -> A2CHistory:
         episodes = int(episodes if episodes is not None else self.config.episodes)
@@ -73,7 +80,7 @@ class A2CTrainer:
         critic_losses: list[float] = []
         adv_means: list[float] = []
         for _ in range(episodes):
-            _states, _, rewards, log_probs, values, dones = self.run_episode()
+            _states, _, rewards, log_probs, values, dones, entropies = self.run_episode()
             # next_values: shift values left by 1; last is 0 (terminal absorbing)
             value_floats = [float(v.detach().item()) for v in values]
             next_values = [*value_floats[1:], 0.0]
@@ -81,19 +88,27 @@ class A2CTrainer:
                 rewards, value_floats, next_values, dones, gamma=self.config.gamma
             )
             targets = [adv + v for adv, v in zip(advantages, value_floats, strict=True)]
-            # entropy estimate: H(pi) = -sum_a p log p; cheap proxy via -log_prob.mean()
-            entropies = [-lp.detach() for lp in log_probs]
+            # entropies: REAL H(pi) from Categorical.entropy() captured per-step in run_episode
             a_loss = actor_loss(
                 log_probs, advantages, entropy_coef=self.config.entropy_coef, entropies=entropies
             )
             c_loss = critic_loss(values, targets)
+            actor_params = [
+                *self.ac_net.actor_fc.parameters(),
+                *self.ac_net.actor_head.parameters(),
+            ]
+            critic_params = [
+                *self.ac_net.critic_fc.parameters(),
+                *self.ac_net.critic_head.parameters(),
+            ]
             self.actor_optim.zero_grad()
+            self.critic_optim.zero_grad()
             a_loss.backward(retain_graph=True)
-            torch.nn.utils.clip_grad_norm_(self.ac_net.parameters(), self.config.grad_clip_norm)
+            torch.nn.utils.clip_grad_norm_(actor_params, self.config.grad_clip_norm)
             self.actor_optim.step()
             self.critic_optim.zero_grad()
             c_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.ac_net.parameters(), self.config.grad_clip_norm)
+            torch.nn.utils.clip_grad_norm_(critic_params, self.config.grad_clip_norm)
             self.critic_optim.step()
             rewards_hist.append(float(np.sum(rewards)))
             actor_losses.append(float(a_loss.detach().item()))
