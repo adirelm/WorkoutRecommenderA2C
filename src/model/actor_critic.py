@@ -16,6 +16,7 @@ from torch import nn
 from torch.distributions import Categorical
 
 from src.env.state import ACTION_COUNT, STATE_DIM
+from src.model.masking import apply_mask
 
 _EXPECTED_NDIM_SINGLE = 1
 _EXPECTED_NDIM_BATCH = 2
@@ -54,13 +55,12 @@ class ActorCriticNet(nn.Module):
 
     @staticmethod
     def _apply_mask(logits: torch.Tensor, action_mask: torch.Tensor | None) -> torch.Tensor:
+        """Validate + delegate to shared :func:`src.model.masking.apply_mask`."""
         if action_mask is None:
             return logits
         if action_mask.shape[-1] != ACTION_COUNT:
             raise ValueError(f"action_mask last dim must be {ACTION_COUNT}; got {action_mask.shape[-1]}")
-        mask_bool = action_mask.to(dtype=torch.bool)
-        neg_inf = torch.full_like(logits, float("-inf"))
-        return torch.where(mask_bool, logits, neg_inf)
+        return apply_mask(logits, action_mask)
 
     def sample(
         self, state: torch.Tensor, action_mask: torch.Tensor | None = None

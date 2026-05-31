@@ -35,6 +35,7 @@ import torch
 from torch.distributions import Categorical
 
 from src.env.workout_env import WorkoutEnv
+from src.model.masking import apply_mask
 from src.utils.seeding import set_global_seed
 
 
@@ -113,10 +114,7 @@ class BaseTrainer(ABC):
         mask_t: torch.Tensor,
     ) -> tuple[int, torch.Tensor, torch.Tensor, Categorical]:
         """Mask logits → Categorical → sample. Shared by every subclass."""
-        if mask_t.dtype != torch.bool:
-            mask_t = mask_t.to(dtype=torch.bool)
-        neg_inf = torch.full_like(logits, float("-inf"))
-        masked = torch.where(mask_t, logits, neg_inf)
+        masked = apply_mask(logits, mask_t)
         dist = Categorical(logits=masked)
         action_t = dist.sample()
         return int(action_t.item()), dist.log_prob(action_t), dist.entropy(), dist
