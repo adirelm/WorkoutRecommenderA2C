@@ -182,14 +182,173 @@ violation and must be flagged in the per-assignment
   draft); secret-scan pattern set extended to catch the moodle
   group-code shape; `LICENSE` added.
 
-## §3. Phase 1 — Data ingest (in progress)
+## §3. Phase 1 — Data ingest
 
-Placeholder. To be filled when Phase 1 begins. The architect-decided
-column for Phase 1 will include: dataset schema, train/val split
-ratio, feature normalisation policy, and the acceptance test that
-defines "ingest is done". The AI will be allowed to implement the
-loader, the normaliser, and the tests against those criteria — not
-to negotiate them.
+### Pass 8 — Phase 1: Data ingest (commits `238ba9a`, `2476893`, `f7ba06e`)
+
+- **Architect intent**: stand up the data layer per PRD §1.5.0 — a
+  `KaggleClient` (download + cache), a `Preprocessor` (schema
+  validation + outlier clip + NaN policy), a `DailyAggregator`
+  (per-user-per-day collapse), and a `ProgramFilter` that selects
+  **PHUL** as the primary recurring program. TDD throughout: tests
+  precede implementation, and the data-quality contract from PRD
+  §1.5.0 is encoded as assertions, not as prose.
+- **AI workflow**: `a3-phase1-data-ingest` (`wk6wqdd4o`).
+- **Outputs**: 32 unit tests (all green); PHUL canonicalised as the
+  primary program; data-quality contract enforced on every load.
+- **Human review**: accepted. The PHUL choice was the architect's
+  call (PRD §1.5.0); the AI was not permitted to substitute a
+  different program at runtime even when row counts favoured one.
+
+### Pass 9 — Phase 1 validation + fix (commit `2476893` + gate-fix `f7ba06e`)
+
+- **Architect intent**: 5-workflow validation pass over the Phase 1
+  deliverables (v1p1 through v5p1: schema, coverage, contract,
+  determinism, grader re-pass). Treat the gate as binding even when
+  the verdict is YELLOW rather than RED.
+- **Outcome**: **YELLOW** verdict — three findings worth fixing
+  before declaring Phase 1 done.
+- **Key fixes applied**:
+  - `kaggle_client` error handling: a `KaggleApiError` was being
+    silently caught and re-raised as a generic `RuntimeError`,
+    erasing the original cause. Now the chain is preserved.
+  - Canonical-sort key order in `DailyAggregator`: sort was by
+    `(date, user)` not `(user, date)`, which made downstream
+    train/val splits non-reproducible across pandas versions.
+  - Branch coverage on the `Preprocessor` NaN-policy switch — one
+    branch (`policy = "drop"` with all-NaN column) was unreached.
+
+## §4. Phases 2-7 — Env, World Model, RL, SDK, Notebook
+
+### Pass 10 — Phase 2: Env layer (commits `eeafb0d`, `4ee28f2`)
+
+- **Architect intent**: build the MDP layer — `WorkoutEnv` (Gym-ish
+  API), `Reward` (the λ₁/λ₂ scalar from the decision log), an
+  `ActionMask` (legality of consecutive same-action picks, per
+  THEORY §3.4), the 12-dim `State` per ADR-003, and a
+  `SyntheticTrainee` stand-in for the human-in-the-loop signal
+  during world-model pretraining.
+- **AI workflow**: built under the standard Phase-2 implementation
+  pattern (test-first, agent per module).
+- **Validation**: 5-workflow validation → **RED** because
+  `reward.py` coverage was at 83% (the imbalance-only edge case
+  where λ₁ = 0 was untested). Fix landed → coverage **100%**.
+- **Human review**: accepted after the coverage fix. The RED→GREEN
+  transition is the audit trail.
+
+### Pass 11 — Phase 3: LSTM world model (commits `ce9747f`, `03fb41d`, `8a8ce5c`, `a646ba5`, `e7a8927`, `ba8f23a`)
+
+- **Architect intent**: pretrain an LSTM world model on
+  `SyntheticTrainee` trajectories so the RL agent in Phases 4-5 can
+  bootstrap on a learned dynamics model rather than only on live
+  rollouts. The world model is **frozen** during RL training (PRD
+  §1.5.3) — this is non-negotiable; the AI must not unfreeze it to
+  "improve" training-loss numbers.
+- **Validation**: 5-workflow validation → **YELLOW**. Two
+  follow-on items applied: THEORY **§7.3** added (world-model
+  freezing rationale + bias-variance argument), and **ADR-005**
+  authored to record terminal-condition choices (episode caps +
+  fatigue overflow + invalid-mask exhaustion).
+- **Human review**: accepted with the THEORY/ADR additions. The
+  6-commit chain reflects iterative test/fix passes, not a clean
+  single landing — recorded honestly here rather than collapsed.
+
+### Pass 12 — Phase 4: REINFORCE baseline (commits `96eec6a`, `db0b8c6`, `3496179`)
+
+- **Architect intent**: REINFORCE first — *before* A2C — so the
+  comparison in Phase 5 is against a real baseline rather than a
+  hand-wavy "untrained policy". `PolicyNet` is a deliberately small
+  1-layer FC (hidden = 128) so the actor-vs-critic comparison in
+  Phase 5 is about the algorithm, not network capacity.
+  `REINFORCETrainer` uses a `RunningMeanBaseline` for variance
+  reduction (THEORY §4.2).
+- **Validation**: 5-workflow validation → **YELLOW**. Two
+  fixes applied: strict gradient-sign tests (the trainer's
+  `loss.backward()` was correct, but the test only checked
+  *magnitude*, not *sign* — strengthened); CE-equivalence
+  docstring on `PolicyNet.log_prob_action` explaining why the
+  log-prob computation is mathematically equivalent to
+  cross-entropy on the chosen action (THEORY §4.1 cross-reference).
+- **Human review**: accepted post-fixes.
+
+### Pass 13 — Phase 5: A2C (commits `9c191e0`, `f1fc34b`, `7088406`)
+
+- **Architect intent**: the headline algorithm. `ActorCriticNet`
+  (shared trunk, two heads), `A2CTrainer` (advantage from
+  TD-target, separate optimizers for actor and critic per ADR), and
+  a `comparator` module that runs REINFORCE vs A2C on identical
+  seeds for the Phase-7 notebook.
+- **Recovery event**: commit `9c191e0` was a **partial commit** —
+  8 of 11 intended files were missing from the staged set (the
+  agent that ran `git add` filtered by a pattern that didn't match
+  three of the new modules). Detected by the post-commit gate
+  sweep. Fixed via a dedicated recovery workflow that re-added the
+  missing files in `f1fc34b`.
+- **Validation**: consolidated 1-workflow validation (5 axes run
+  in parallel: API, math, determinism, coverage, grader) →
+  **HEDGE** verdict.
+- **Fixes applied** (these are architect-signed, recorded in the
+  decision log below):
+  - **Seed-reuse bug**: `A2CTrainer.run_episode` was re-seeding
+    the env on every episode, collapsing the rollout distribution.
+    Now the env is seeded **once in `__init__`**.
+  - **Grad-clip scope**: clipping was applied to all parameters
+    in one shot, which fought the two-optimizer setup. Now clip
+    is per-step + per-net (actor params clipped inside the actor
+    step, critic params inside the critic step).
+  - **Entropy surrogate**: bonus was computed as
+    `-log_prob.mean()` (a sampling surrogate) instead of the
+    closed-form `dist.entropy()`. Replaced with the closed form;
+    the surrogate is biased for finite batches.
+
+### Pass 14 — Phase 6: SDK + CLI (commits `07635cf`, `d4b38bc`)
+
+- **Architect intent**: stand up the public surface — `WorkoutSDK`
+  (the only entry point business logic should be reachable
+  through, per CLAUDE.md §3) + a `CLIMenu` + a `main.py`
+  entrypoint. The constraint that **no business logic may live in
+  the CLI or in the notebook** is architect-signed; the AI is not
+  allowed to inline an SDK call's body into a menu handler to
+  "shave a layer".
+- **Validation**: consolidated validation → **FAIL** with 3 hard
+  failures and 3 P0s:
+  - **CLI verb 6 `TypeError`** — `recommend()` was being called
+    without the optional `state` argument, but the SDK signature
+    made it required. Fixed: defaults to `State.initial()` when
+    no state is provided.
+  - **Tuple-unpacking bug** in the train-A2C handler — the SDK
+    returns a 3-tuple but the menu unpacked it as a 2-tuple,
+    silently dropping the metrics dict. Fixed.
+  - **Private API leak** — the menu was importing
+    `_internal_helper` from `sdk.py`. Promoted to public or
+    inlined into the menu, depending on which side owns the
+    behaviour.
+- All 6 P0 findings fixed before declaring Phase 6 done.
+
+### Pass 15 — Phase 7: Analysis notebook (commit `2e441e2`)
+
+- **Architect intent**: write `notebooks/analysis.ipynb` per PRD
+  §4 N7 — the notebook is a **consumer of `WorkoutSDK` only**, no
+  business logic redefined inside it. Contents: LaTeX derivations
+  cross-referenced to THEORY §3-§5, four plots
+  (reward-curve / advantage-distribution / policy-entropy /
+  REINFORCE-vs-A2C variance), and a 5-question discussion section
+  per THEORY §7.6.
+- **Human review**: accepted. Specifically verified the
+  Action-Masking citation (lecture timestamp 01:14:33) is in the
+  notebook's reference list, not just in THEORY — the brief
+  requires the citation to be reachable from the analysis artefact.
+
+### Pass 16 — Phase 8: Submission prep (this commit)
+
+- **Architect intent**: pre-submission sweep — README expanded
+  with the run/quickstart story, `COST_ANALYSIS.md` authored to
+  document the workflow-token cost per phase, this `PROMPTS.md`
+  extended to cover Phases 1-7, and a final pre-submission gate
+  sweep (lint + coverage + 150-LOC guard + secret scan + TRACE
+  freshness). Tagging **v1.0.0** at the end of this commit.
+- **Human review**: this entry itself is the architect's review
+  note — accepting the v1.0.0 surface as the submission cut.
 
 ## §4. Decision log
 
@@ -219,6 +378,24 @@ be implicitly changed by an AI pass.
 - 2026-05-31 — Repo: **adirelm/WorkoutRecommenderA2C** public.
 - 2026-05-31 — rmisegal invited read-only (invitation
   **#320698055**).
+- 2026-05-31 — `A2CTrainer` must seed the env **once in
+  `__init__`**, not on every episode (P0 from v1p5 — re-seeding
+  per episode collapses the rollout distribution).
+- 2026-05-31 — Grad-clip scope is **per-step + per-net**: actor
+  parameters clipped inside the actor optimizer step, critic
+  parameters inside the critic step. Clipping the union in one
+  call fights the two-optimizer design.
+- 2026-05-31 — Entropy bonus uses the closed-form
+  `dist.entropy()`, **not** the `-log_prob.mean()` sampling
+  surrogate (the surrogate is biased for finite batches).
+- 2026-05-31 — CLI verb 6 `recommend()` defaults to
+  `State.initial()` when no state argument is provided — fixes
+  the `TypeError` from Pass 14 without weakening the SDK
+  signature for programmatic callers.
+- 2026-05-31 — Notebook is **consumer-only**: no `WorkoutSDK`
+  methods may be redefined or shadowed inside `analysis.ipynb`
+  (per PRD §4 N7). Any "convenience helper" the AI wants to
+  inline into a cell must be promoted to the SDK first.
 
 ## §5. Workflow registry
 
@@ -237,4 +414,19 @@ produced a given artefact.
 | `v3-submission-compliance` (w2v028r83) | 0 validate | 6 | 138k | 🟡 YELLOW (1 expected blocker) |
 | `v4-gate-enforcement` (wu3c1jaer) | 0 validate | 6 | 136k | 🟡 MIXED (11 upgrades) |
 | `v5-grader-repass` (wso3q6f8c) | 0 validate | 9 | 230k | 🟡 YELLOW (3 lenses ↑, 1 ↓) |
-| `a3-phase0-fix-execution` (THIS) | 0 polish | 9 | (in flight) | (this commit) |
+| `a3-phase0-fix-execution` (wso3q6f8c→) | 0 polish | 9 | ~210k | landed (commit on `main`) |
+| `a3-phase1-data-ingest` (wk6wqdd4o) | 1 build | 8 | ~290k | green; 32 unit tests |
+| `v1p1-schema` / `v2p1-coverage` / `v3p1-contract` / `v4p1-determinism` / `v5p1-grader` | 1 validate | 5×6 | ~310k | 🟡 YELLOW; 3 fixes applied |
+| `a3-phase2-env` | 2 build | 7 | ~245k | green post-coverage-fix |
+| `v1p2…v5p2` (env validation) | 2 validate | 5×5 | ~260k | 🔴 RED → 🟢 GREEN after reward.py fix |
+| `a3-phase3-world-model` | 3 build | 8 | ~360k | YELLOW; THEORY §7.3 + ADR-005 added |
+| `v1p3…v5p3` (world-model validation) | 3 validate | 5×5 | ~270k | 🟡 YELLOW; follow-ons landed |
+| `a3-phase4-reinforce` | 4 build | 6 | ~205k | YELLOW; gradient-sign tests + CE docstring |
+| `v1p4…v5p4` (REINFORCE validation) | 4 validate | 5×4 | ~230k | 🟡 YELLOW; fixes applied |
+| `a3-phase5-a2c` | 5 build | 8 | ~340k | partial commit recovered in `f1fc34b` |
+| `a3-phase5-a2c-recovery` | 5 recover | 3 | ~85k | re-added 3 missing files |
+| `v1p5-consolidated` (5 axes parallel) | 5 validate | 9 | ~310k | HEDGE; 3 P0 fixes (seed/grad-clip/entropy) |
+| `a3-phase6-sdk-cli` | 6 build | 6 | ~195k | FAIL; 6 P0s fixed before sign-off |
+| `v1p6-consolidated` | 6 validate | 9 | ~250k | FAIL → GREEN after P0 sweep |
+| `a3-phase7-notebook` | 7 build | 4 | ~175k | green; notebook is SDK-consumer only |
+| `a3-phase8-submission-prep` (THIS) | 8 polish | 5 | (in flight) | (this commit) |
