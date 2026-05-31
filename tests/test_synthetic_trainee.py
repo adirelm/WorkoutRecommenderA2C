@@ -14,6 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+import src.env.synthetic_trainee as st_mod
 from src.env.state import State
 from src.env.synthetic_trainee import SyntheticTrainee
 
@@ -92,6 +93,31 @@ def test_seeded_rng_is_deterministic() -> None:
     a = t1.next_state(s, action_id=2, prescribed_volume=8.0)
     b = t2.next_state(s, action_id=2, prescribed_volume=8.0)
     np.testing.assert_allclose(a.to_array(), b.to_array(), rtol=0, atol=0)
+
+
+def test_unknown_action_id_raises_value_error() -> None:
+    """Line 67: unknown action_id falls outside _ACTION_MUSCLES and must raise."""
+    trainee = SyntheticTrainee(rng=np.random.default_rng(0), noise_sigma=0.0)
+    with pytest.raises(ValueError, match="unknown action_id"):
+        trainee.next_state(State.initial(), action_id=99, prescribed_volume=5.0)
+
+
+def test_non_rest_action_with_empty_targeted_skips_soreness_gain(monkeypatch) -> None:
+    """Branch 88→93: non-rest action whose chain tuple is empty hits the
+    `if targeted:` False arm and skips the per-chain gain loop. Reached via
+    monkey-patching the module-level mapping for one action id."""
+    patched = dict(st_mod._ACTION_MUSCLES)
+    patched[1] = ()  # Push now claims no muscle chain
+    monkeypatch.setattr(st_mod, "_ACTION_MUSCLES", patched)
+
+    trainee = SyntheticTrainee(rng=np.random.default_rng(0), noise_sigma=0.0)
+    s = _fatigued_state()
+    nxt = trainee.next_state(s, action_id=1, prescribed_volume=10.0)
+    # Soreness chains should only have *decayed* — no targeted gain was added.
+    assert nxt.soreness_push < s.soreness_push
+    assert nxt.soreness_pull < s.soreness_pull
+    assert nxt.soreness_legs < s.soreness_legs
+    assert nxt.soreness_core < s.soreness_core
 
 
 def test_state_remains_in_valid_ranges_after_many_steps() -> None:

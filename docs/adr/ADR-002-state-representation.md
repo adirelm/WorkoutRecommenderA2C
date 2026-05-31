@@ -48,9 +48,10 @@ shape):
    Conditioning.
 6. `readiness` ∈ [0, 1] — `1 − fatigue` smoothed across a 3-day window; the
    brief's "ready to train hard today" feature (§7.3.2).
-7. `rolling_7d_volume` ∈ [0, ∞), normalised by trainee baseline — feeds the
-   overload term in the reward (ADR-003) and gates the
-   HIIT / Conditioning mask in ADR-004.
+7. `rolling_7d_volume` ∈ [0, ∞) — raw (un-normalised) volume sum over the
+   trailing 7 days; downstream code (reward overload term in ADR-003 and the
+   HIIT / Conditioning mask in ADR-004) applies its own per-trainee
+   normalisation when needed.
 8. `streak_days_trained` ∈ ℤ≥0 — count of consecutive non-Rest days; used
    by the Rest-mask rule (ADR-004) and as an adherence signal.
 9. `days_since_last_rest` ∈ ℤ≥0 — symmetric to streak; helps the policy
@@ -62,9 +63,10 @@ shape):
 11. `adherence_signal` ∈ [0, 1] — rolling fraction of planned sessions
     completed in the last 7 days, as a proxy for trainee engagement
     (brief §7.3.4).
-12. `weekly_progress` ∈ [−1, 1] — change in average per-session volume from
-    week *t − 1* to week *t*, clipped; the brief's "are we progressing"
-    feature (§7.3.5).
+12. `weekly_progress` ∈ [0, 1.2] (capped) — change in average per-session
+    volume from week *t − 1* to week *t*, clipped to the closed interval
+    [0, 1.2] so that a stagnant week reads 0 and a clearly-progressing week
+    saturates at 1.2; the brief's "are we progressing" feature (§7.3.5).
 
 All twelve features are computed in `src/data/state_builder.py`, exposed
 through `WorkoutRecommenderSDK.get_state()`, and consumed by both the LSTM

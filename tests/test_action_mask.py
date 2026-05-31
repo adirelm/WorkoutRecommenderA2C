@@ -61,10 +61,19 @@ def test_mobility_always_legal():
 
 
 def test_conditioning_masked_when_overload_exceeded():
-    svc = ActionMaskService(conditioning_overload_threshold=1.0)
-    # rolling_7d_volume used as proxy for overload signal (>1.0 → masked)
+    # Default ADR-003/004 threshold is 1.2 * baseline. The state field
+    # rolling_7d_volume is the baseline-normalised ratio, so 1.5 means
+    # 1.5 * baseline -> above the 1.2 overload cutoff -> Conditioning masked.
+    svc = ActionMaskService()
     mask = svc.mask(_state(rolling_7d_volume=1.5), history=[])
     assert bool(mask[CONDITIONING]) is False
+
+
+def test_conditioning_legal_when_volume_below_overload_threshold():
+    # 1.1 * baseline is below the 1.2 overload cutoff -> Conditioning legal.
+    svc = ActionMaskService()
+    mask = svc.mask(_state(rolling_7d_volume=1.1), history=[])
+    assert bool(mask[CONDITIONING]) is True
 
 
 def test_apply_to_logits_sets_minus_inf_for_masked():
@@ -94,3 +103,12 @@ def test_softmax_after_mask_gives_zero_prob_to_masked():
     assert probs[0] == pytest.approx(0.0)
     assert probs[3] == pytest.approx(0.0)
     assert probs.sum() == pytest.approx(1.0)
+
+
+def test_apply_to_logits_raises_when_shapes_disagree():
+    """Line 100: logits and mask must have matching shapes."""
+    svc = ActionMaskService()
+    logits = np.zeros(ACTION_COUNT, dtype=np.float32)
+    mask = np.array([True, False, True])  # wrong shape
+    with pytest.raises(ValueError, match="shape"):
+        svc.apply_to_logits(logits, mask)

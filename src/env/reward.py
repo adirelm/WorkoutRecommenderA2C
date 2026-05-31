@@ -24,7 +24,12 @@ from src.env.state import State
 
 @dataclass(frozen=True)
 class RewardConfig:
-    """Reward weights and shape parameters (ADR-003 defaults)."""
+    """Reward weights and shape parameters (ADR-003 defaults).
+
+    The 7-day baseline window is fixed by THEORY and supplied via the
+    ``baseline_7d_volume`` argument to :meth:`RewardFunction.compute` — there
+    is no config knob because changing it would invalidate the eq. 15 contract.
+    """
 
     lambda_1: float = 2.0  # overload weight
     lambda_2: float = 1.0  # imbalance weight
@@ -32,7 +37,7 @@ class RewardConfig:
     w_variety: float = 0.3  # within-gain variety weight
     overload_threshold_mult: float = 1.2
     overload_exponent: float = 1.5
-    baseline_window_days: int = 28
+    progress_clip_ceiling: float = 1.2  # max single-step progress delta
 
 
 def _js_divergence(p: Mapping[str, float], q: Mapping[str, float]) -> float:
@@ -77,6 +82,16 @@ class RewardFunction:
         muscle_share_14d: dict[str, float],
         target_muscle_dist: dict[str, float],
     ) -> dict:
+        """Eq. 15 reward.
+
+        ``weekly_target`` gates progress to 0 when the trainee has no weekly
+        target; ``next_state.weekly_progress`` is assumed already normalised
+        upstream (``weekly_so_far / target``).
+
+        ``target_muscle_dist`` is used only by :meth:`_variety` (JS-divergence
+        from a goal distribution). The :meth:`_imbalance` penalty looks at
+        ``muscle_share_14d`` alone — it punishes any skew regardless of goal.
+        """
         cfg = self.config
         progress = self._progress(state, next_state, weekly_target)
         variety = self._variety(muscle_share_14d, target_muscle_dist)
@@ -95,15 +110,14 @@ class RewardFunction:
 
     # ---- components --------------------------------------------------------
 
-    @staticmethod
-    def _progress(state: State, next_state: State, weekly_target: float) -> float:
+    def _progress(self, state: State, next_state: State, weekly_target: float) -> float:
         if weekly_target <= 0:
             return 0.0
         prev = state.weekly_progress
         # next_state.weekly_progress is already normalised by target upstream;
         # treat it as the "weekly_so_far / target" signal at the new step.
         delta = next_state.weekly_progress - prev
-        return float(np.clip(delta, 0.0, 1.2))
+        return float(np.clip(delta, 0.0, self.config.progress_clip_ceiling))
 
     def _variety(self, share: Mapping[str, float], target: Mapping[str, float]) -> float:
         return float(1.0 - _js_divergence(share, target))

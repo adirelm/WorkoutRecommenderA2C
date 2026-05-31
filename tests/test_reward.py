@@ -83,8 +83,9 @@ def test_overload_superlinear_above_threshold() -> None:
         muscle_share_14d=_BALANCED,
         target_muscle_dist=_BALANCED,
     )
-    # exponent 1.5 on (0.3) → 0.164... — strictly positive and superlinear shape verified
-    assert out["overload"] > 0.0
+    # Pin the exponent: excess/baseline = (150-120)/100 = 0.3, raised to 1.5.
+    # If someone mutates 1.5 → 2.0 (or anything else), this assertion fails.
+    assert out["overload"] == pytest.approx(0.3**1.5, rel=1e-9, abs=1e-12)
     # Confirm super-linearity: doubling the over-threshold excess more than doubles overload.
     s2, ns2 = _state(rolling_7d=180.0), _state(rolling_7d=180.0)  # 60% over baseline
     out2 = rf.compute(
@@ -144,3 +145,8 @@ def test_total_reward_eq_15_decomposition() -> None:
     cfg = RewardConfig()
     expected = out["gain"] - cfg.lambda_1 * out["overload"] - cfg.lambda_2 * out["imbalance"]
     assert out["reward"] == pytest.approx(expected, rel=1e-9, abs=1e-9)
+
+
+# Edge-case guards (weekly_target<=0, baseline<=0, empty share dict, JS divergence
+# zero-sum / scipy-less fallback, progress_clip_ceiling) are covered in
+# tests/test_reward_edge_cases.py to keep this file under the 150-LOC budget.

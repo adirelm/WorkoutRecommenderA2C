@@ -29,19 +29,42 @@ Two implementation choices exist:
 ## Decision
 
 Implement masking as **logits → −∞ before softmax** inside an
-`ActionMaskService` injected into both the REINFORCE and A2C agents. The
-service exposes one method, `mask(logits, state) -> masked_logits`, which
-adds a vector of zeros and `-inf` entries (per legal / illegal action) to
-the raw logits before the agent constructs the Categorical distribution.
+`ActionMaskService` injected into both the REINFORCE and A2C agents.
+
+**API shape — split into two pure methods (deliberate revision).** An
+earlier draft of this ADR specified a single `mask(logits, state) ->
+masked_logits` call. The shipped implementation
+(`src/env/action_mask.py`) instead exposes two methods:
+
+- `mask(state, history) -> np.ndarray[bool]` — builds the legality mask.
+- `apply_to_logits(logits, mask) -> np.ndarray` — sets `logits[~mask]` to
+  `-inf` and returns a float copy.
+
+The composition `apply_to_logits(logits, mask(state, history))` is
+semantically identical to the original single-method contract, so the
+policy-gradient guarantee below is unchanged. We keep the split because
+(a) the boolean mask is independently useful — debug printouts, training
+metrics, env-side legality checks — and (b) the two concerns
+(*"which actions are legal?"* vs *"how do you neutralise illegal logits?"*)
+have different test surfaces and are easier to verify in isolation. This
+is a documentation-level revision of the API shape, not a change to the
+masking semantics.
 
 Four masking rules are applied, each derived from the 12-d state vector
 fixed in ADR-002:
 
 1. **Rest mask.** Action 0 (Rest) is masked if the last 3 days were all
-   Rest. (Derived from `streak_days_trained == 0` for the last 3
-   timesteps, which the SDK passes alongside the state.) Rationale: a
-   policy that converges to "Rest forever" achieves a zero penalty and
-   near-zero gain; we want to forbid that absorbing state.
+   Rest. The implementation reads this from an action-history buffer
+   (`history[-3:] == [REST, REST, REST]`) rather than from
+   `streak_days_trained == 0` over the last 3 timesteps. The two signals
+   are equivalent by construction: Rest is the only action that does
+   not increment `streak_days_trained`, so a 3-day Rest streak is
+   exactly a 3-step run of `streak_days_trained == 0`. We use the
+   action history because it is what the SDK already passes alongside
+   the state and it makes the rule trivially testable from a literal
+   `[REST, REST, REST]` list. Rationale: a policy that converges to
+   "Rest forever" achieves a zero penalty and near-zero gain; we want
+   to forbid that absorbing state.
 2. **Legs mask.** Action 3 (Legs) is masked if `soreness_legs > 0.8`.
    Rationale: training already-very-sore legs is the prototypical
    safety-relevant decision the brief uses to motivate masking ("trainee

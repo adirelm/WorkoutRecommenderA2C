@@ -3,12 +3,30 @@
 Applies hard constraints to the policy's action distribution by setting
 logits of illegal actions to -inf so softmax assigns them zero probability.
 
+API split (ADR-004 documents this choice). The ADR's narrative describes a
+single ``mask(logits, state) -> masked_logits`` call; the implementation
+splits it into two pure methods for testability:
+
+    * ``mask(state, history) -> bool np.ndarray``  builds the legality mask
+    * ``apply_to_logits(logits, mask) -> np.ndarray``  applies it (-inf)
+
+The bool mask is independently useful (debug printouts, metrics, env-side
+legality checks) so we keep both methods exposed. Equivalent to the ADR
+contract: ``apply_to_logits(logits, mask(state, history))``.
+
 Rules (ADR-004):
     1. Rest (id=0) masked when last 3 days were all Rest — avoids degenerate
-       low-load loops.
+       low-load loops. ADR-004 phrases this as ``streak_days_trained == 0
+       for the last 3 timesteps``; here we use the equivalent
+       ``history[-3:] == [REST, REST, REST]`` signal because the action
+       history is what the SDK already passes alongside the state, and the
+       two signals are equivalent by construction (Rest is the only action
+       that does not increment ``streak_days_trained``).
     2. Legs (id=3) masked when state.soreness_legs > 0.8.
-    3. Conditioning (id=5) masked when an overload signal exceeds the
-       configured threshold (rolling_7d_volume used as proxy in Phase 2).
+    3. Conditioning (id=5) masked when ``rolling_7d_volume / baseline_7d
+       > 1.2`` (ADR-003 / ADR-004 overload threshold). The state field
+       ``rolling_7d_volume`` is the baseline-normalised ratio, so the
+       comparison is against 1.2 directly — not absolute volume.
     4. Mobility (id=6) is NEVER masked — always a safe fallback.
 """
 
@@ -32,7 +50,7 @@ class ActionMaskService:
         self,
         rest_streak_threshold: int = 3,
         legs_soreness_threshold: float = 0.8,
-        conditioning_overload_threshold: float = 1.0,
+        conditioning_overload_threshold: float = 1.2,
     ) -> None:
         self._rest_streak_threshold = int(rest_streak_threshold)
         self._legs_soreness_threshold = float(legs_soreness_threshold)
@@ -58,7 +76,9 @@ class ActionMaskService:
             mask[_LEGS_ID] = False
 
         # Rule 3: Conditioning masked when overload signal exceeds threshold.
-        # Phase-2 proxy: rolling_7d_volume vs the configured threshold.
+        # state.rolling_7d_volume is the baseline-normalised ratio (rolling
+        # 7-day volume / user_baseline_7d_volume), so the default 1.2
+        # threshold encodes ADR-003/004's "1.2 · baseline" rule directly.
         if state.rolling_7d_volume > self._conditioning_overload_threshold:
             mask[_CONDITIONING_ID] = False
 

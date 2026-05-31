@@ -35,11 +35,13 @@ def _declared_bounds() -> dict[str, tuple[float, float]]:
     }
 
 
-def test_state_stays_in_bounds_over_1000_steps() -> None:
-    """Across 1000 mixed random steps, no state channel goes out of its declared range."""
-    env = WorkoutEnv(seed=0)
+@pytest.mark.parametrize("seed", [0, 1, 42, 1337, 9999])
+def test_state_stays_in_bounds_over_1000_steps(seed: int) -> None:
+    """Across 1000 mixed random steps, no state channel goes out of its declared range.
+    Parametrized over multiple seeds to catch boundary regressions sensitive to noise draws."""
+    env = WorkoutEnv(seed=seed)
     state = env.reset()
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     bounds = _declared_bounds()
     for _ in range(1000):
         action = int(rng.integers(0, ACTION_COUNT))
