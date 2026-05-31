@@ -61,9 +61,7 @@ OUT_PNG: Path = REPO_ROOT / "results" / "figures" / "lstm_loss.png"
 
 def build_dataset() -> tuple[list, list]:
     """Roll a 28-day trajectory, slice into 7-day windows, chronological split."""
-    trajectory = generate_trajectory(
-        num_days=NUM_DAYS, seed=SEED, action_policy=ACTION_POLICY
-    )
+    trajectory = generate_trajectory(num_days=NUM_DAYS, seed=SEED, action_policy=ACTION_POLICY)
     windows = build_windows(trajectory, window_len=WINDOW_LEN)
     train, val = split_train_val(windows, val_days=VAL_DAYS)
     return train, val

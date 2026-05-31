@@ -93,10 +93,7 @@ def plot_curve(matrix: np.ndarray, out_path: Path) -> None:
     ax.set_xscale("log")
     ax.set_xlabel("Adam learning rate (log scale)")
     ax.set_ylabel(f"mean reward over last {WINDOW} of {SHORT_EPISODES} episodes")
-    ax.set_title(
-        f"REINFORCE lr sensitivity — {len(LR_GRID)} lrs × {len(SEEDS)} seeds × "
-        f"{SHORT_EPISODES} eps"
-    )
+    ax.set_title(f"REINFORCE lr sensitivity — {len(LR_GRID)} lrs × {len(SEEDS)} seeds × {SHORT_EPISODES} eps")
     ax.axvline(3e-4, linestyle="--", linewidth=1.0, color="#888888", label="default lr=3e-4")
     ax.grid(True, which="both", alpha=0.3)
     ax.legend(loc="best", frameon=False)
