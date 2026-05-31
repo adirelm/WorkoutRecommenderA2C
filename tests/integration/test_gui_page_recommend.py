@@ -51,18 +51,21 @@ def recommend_app(trained_sdk: WorkoutSDK) -> AppTest:
 
 
 def test_use_state_initial_toggle_is_on_by_default(recommend_app: AppTest) -> None:
-    """The 'Use State.initial()' sidebar toggle must default to True.
+    """The 'Reset to fresh trainee defaults' sidebar toggle must default to True.
 
     The page should open in the one-click flow — no need for the grader to
     first move 12 sliders before they can call ``sdk.recommend``.
     """
-    toggles = [t for t in recommend_app.sidebar.toggle if "State.initial" in t.label]
+    toggles = [
+        t for t in recommend_app.sidebar.toggle
+        if "fresh trainee defaults" in t.label or "State.initial" in t.label
+    ]
     assert toggles, (
-        "expected a sidebar toggle labelled 'Use State.initial()' "
+        "expected a sidebar toggle labelled 'Reset to fresh trainee defaults' "
         f"in {[t.label for t in recommend_app.sidebar.toggle]}"
     )
     assert toggles[0].value is True, (
-        "'Use State.initial()' toggle should default to True so the page "
+        "'Reset to fresh trainee defaults' toggle should default to True so the page "
         "loads in zero-config recommendation mode"
     )
 

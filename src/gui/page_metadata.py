@@ -29,7 +29,7 @@ PAGES: tuple[PageMeta, ...] = (
     PageMeta("🎯", "REINFORCE", "04_reinforce", "§7.4"),
     PageMeta("⚡", "A2C (Actor-Critic)", "05_a2c", "§7.5"),
     PageMeta("📈", "Comparison", "06_comparison", "§7.6"),
-    PageMeta("💡", "Recommendation", "07_recommendation", "§7.5"),
+    PageMeta("💡", "Recommend", "07_recommend", "§7.7"),
     PageMeta("📝", "Discussion", "08_discussion", "§1.4"),
 )
 
