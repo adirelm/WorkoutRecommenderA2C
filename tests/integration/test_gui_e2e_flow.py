@@ -86,7 +86,7 @@ def test_full_user_journey_preserves_session_state() -> None:
     # 4. REINFORCE — episodes=5 (min). Train.
     reinforce = _run("04_reinforce.py", prior=carry)
     assert not reinforce.exception, f"reinforce crashed: {reinforce.exception}"
-    _set_slider(reinforce, "episodes", 5)
+    _set_slider(reinforce, "Training episodes", 5)
     reinforce = reinforce.run()
     reinforce = _click_first(reinforce, "Train REINFORCE")
     assert _state_get(reinforce, "gui.reinforce.last_history") is not None, (

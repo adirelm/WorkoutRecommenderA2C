@@ -19,15 +19,17 @@ from src.gui.theme import header
 
 THEORY_PATH = Path(__file__).resolve().parents[3] / "docs" / "THEORY.md"
 
-# (anchor_id, sidebar_label) — anchors match Streamlit's auto-slug for headings.
+# (anchor_id, sidebar_label) — labels match the brief's §-numbering verbatim
+# (§1.2, §2.4, §3.2, §5.4, §7.3, §7.4, §7.5). Anchors match Streamlit's
+# auto-slug for the corresponding ``## §X.Y`` heading in docs/THEORY.md.
 SECTIONS: tuple[tuple[str, str], ...] = (
-    ("1-2-objective-function-j-theta-what-we-are-maximising", "§1 Policy / Objective"),
-    ("2-4-vanilla-reinforce-update", "§2 REINFORCE"),
-    ("3-2-baseline-subtracted-update-eq-4", "§3 Baseline"),
-    ("4-2-reward-to-go-eq-7", "§4 Reward-to-go"),
-    ("5-4-advantage-function-eq-8", "§5 A2C (Advantage / TD / Actor / Critic)"),
-    ("7-4-reward-eq-15-the-domain-specific-shaping", "§6 Reward"),
-    ("7-3-lstm-world-model-eq-14", "§7 LSTM World Model"),
+    ("1-2-objective-function-j-theta-what-we-are-maximising", "§1.2 — Objective"),
+    ("2-4-vanilla-reinforce-update", "§2.4 — REINFORCE"),
+    ("3-2-baseline-subtracted-update-eq-4", "§3.2 — Baseline"),
+    ("5-4-advantage-function-eq-8", "§5.4 — A2C (Advantage / TD)"),
+    ("7-3-lstm-world-model-eq-14", "§7.3 — LSTM World Model"),
+    ("7-4-reward-eq-15-the-domain-specific-shaping", "§7.4 — Reward + REINFORCE update"),
+    ("7-5-a2c-advantage-in-the-workout-pipeline-eq-17", "§7.5 — A2C advantage"),
 )
 
 EQ_BLOCK_RE = re.compile(r"\$\$\s*(.*?)\s*\$\$", re.DOTALL)

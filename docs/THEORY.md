@@ -123,7 +123,7 @@ The brief's intuition (p. 17, §5.3): you tell the critic "my state is worth 5",
 
 ---
 
-## §5.4. TD error δ_t (eq. 9)
+## §5.4.1. TD error δ_t (eq. 9)
 
 Brief p. 18, eq. 9. The sample-based, biased-but-bounded-variance estimator of Advantage that powers all modern Actor-Critic:
 
@@ -159,7 +159,7 @@ The brief's framing (p. 17, §5.1): the actor is the "football player on the pit
 
 ---
 
-## §5.5. Critic update (eq. 11) and critic loss (eq. 12)
+## §5.5.1. Critic update (eq. 11) and critic loss (eq. 12)
 
 Brief p. 19, eq. 11 (critic SGD step) and eq. 12 (squared-TD loss):
 
@@ -222,7 +222,7 @@ The brief leaves the three terms as English placeholders. Our concrete operation
 
 ---
 
-## §7.4. REINFORCE update for the workout policy (eq. 16)
+## §7.4.1. REINFORCE update for the workout policy (eq. 16)
 
 Brief p. 29, eq. 16. Same formula as eq. 2, restated in the §7 context to make the actor-only baseline explicit:
 

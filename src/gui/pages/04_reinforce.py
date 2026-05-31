@@ -90,7 +90,11 @@ def render() -> None:
     hero("REINFORCE", "Monte-Carlo policy gradient with running-mean baseline", icon="🎯")
     info_block()
     params = sidebar()
-    if st.button("Train REINFORCE", type="primary"):
+    if st.button(
+        "Train REINFORCE",
+        type="primary",
+        help="Run REINFORCE with running-mean baseline (eq. 16).",
+    ):
         with st.spinner("Training REINFORCE..."):
             _run_training(params)
     _render_final_metrics()

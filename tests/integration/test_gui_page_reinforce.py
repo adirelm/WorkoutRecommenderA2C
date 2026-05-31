@@ -39,20 +39,20 @@ def test_sidebar_sliders_present_with_expected_ranges():
     app = _fresh_app().run()
     assert not app.exception, f"page raised on initial render: {app.exception}"
 
-    episodes = _slider_by_label(app, "episodes")
+    episodes = _slider_by_label(app, "Training episodes")
     assert (episodes.min, episodes.max, episodes.step) == (5, 200, 5)
 
-    baseline = _slider_by_label(app, "baseline_alpha")
+    baseline = _slider_by_label(app, "Baseline EMA coefficient")
     assert math.isclose(baseline.min, 0.0)
     assert math.isclose(baseline.max, 0.5)
 
-    lr = _slider_by_label(app, "lr (log scale)")
+    lr = _slider_by_label(app, "Learning rate (Adam)")
     assert lr.min == pytest.approx(1e-4) and lr.max == pytest.approx(1e-2)
 
-    gamma = _slider_by_label(app, "gamma (discount)")
+    gamma = _slider_by_label(app, "Discount factor γ")
     assert gamma.min == pytest.approx(0.9) and gamma.max == pytest.approx(0.999)
 
-    hidden = _slider_by_label(app, "policy_hidden")
+    hidden = _slider_by_label(app, "Policy hidden units")
     assert {int(o) for o in hidden.options} >= {32, 64, 128, 256}
 
 
@@ -68,7 +68,7 @@ def test_train_click_populates_metric_row_and_session_state():
     app = _fresh_app()
     app.run()
     # Shrink the run to 3 episodes so the test stays fast.
-    _slider_by_label(app, "episodes").set_value(5)  # min allowed
+    _slider_by_label(app, "Training episodes").set_value(5)  # min allowed
     app.run()
 
     train_btn = next(b for b in app.button if b.label == "Train REINFORCE")
