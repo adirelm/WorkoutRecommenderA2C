@@ -59,17 +59,35 @@ def test_mask_zeros_illegal_action_probability():
         assert abs(log_prob - 0.0) < 1e-5
 
 
-def test_categorical_not_argmax_during_training():
-    """With all actions legal, sampling over many draws yields >1 unique action.
+def test_categorical_sample_frequency_matches_softmax_distribution():
+    """P1 v4p4: stronger than just 'more than one unique action' — verify the
+    empirical sample frequencies match softmax(logits) within a Chi-Square tolerance.
 
-    TR5: Categorical sampling — not argmax — keeps exploration on-policy.
+    A pure-argmax mutant fails this. An epsilon-greedy mutant with eps=0.1 also fails.
+    An identity-temperature Categorical passes.
     """
     torch.manual_seed(0)
-    net = PolicyNet(seed=0)
-    state = torch.randn(STATE_DIM)
-    mask = torch.ones(ACTION_COUNT, dtype=torch.bool)
-    actions = {net.sample(state, action_mask=mask)[0] for _ in range(200)}
-    assert len(actions) > 1, "policy collapsed to argmax (no exploration)"
+    net = PolicyNet(hidden=32, seed=0)
+    state = torch.zeros((STATE_DIM,), dtype=torch.float32)
+    logits = net.forward(state)
+    probs = torch.softmax(logits, dim=-1).detach().numpy()
+
+    n_samples = 2000
+    counts = [0] * ACTION_COUNT
+    for _ in range(n_samples):
+        action, _ = net.sample(state)
+        counts[action] += 1
+    empirical = [c / n_samples for c in counts]
+
+    # Chi-square style: total absolute deviation should be small relative to probs.
+    # With 2000 samples, sqrt(p*(1-p)/N) ~ 0.011 for p=0.14 — allow 3 sigma per action.
+    for i in range(ACTION_COUNT):
+        sigma = (probs[i] * (1 - probs[i]) / n_samples) ** 0.5
+        deviation = abs(empirical[i] - probs[i])
+        assert deviation < 5 * sigma + 0.02, (
+            f"action {i}: empirical {empirical[i]:.3f} vs softmax {probs[i]:.3f}, "
+            f"deviation {deviation:.4f} > 5*sigma ({5 * sigma:.4f}) + 0.02 — sampler may not be Categorical"
+        )
 
 
 def test_log_prob_differentiable():

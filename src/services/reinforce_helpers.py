@@ -38,6 +38,21 @@ def reinforce_loss(
 ) -> torch.Tensor:
     """REINFORCE policy-gradient loss:  L = - mean_t [ log π · (G_t - b) ].
 
+    Brief §2.6 / §2.7 insight: this loss is mathematically equivalent to the
+    weighted cross-entropy form
+        L = -mean_t [ G_t-b ] * log π_θ(a_t | s_t)
+          = (F.cross_entropy(logits, action, reduction='none') * (G - b).detach()).mean()
+    Our implementation builds advantages as a fresh tensor from Python floats
+    (lines 55-59), which is detached-by-construction — gradients only flow back
+    to the policy through log_probs, never through the returns. This is the
+    "non-negotiable .detach()" discipline the brief flags at §2.7.
+
+    Note on .mean() vs .sum(): the brief's eq. 4/16 use sum-over-trajectory.
+    We use mean-over-trajectory so the effective learning rate is independent
+    of episode length T — Adam normalises away the constant 1/T factor and
+    this matches the OpenAI Spinning Up reference implementation. Both forms
+    converge to the same fixed point.
+
     Args:
         log_probs: per-timestep log π_θ(a_t | s_t) — must be differentiable
             scalar tensors connected to the policy parameters.

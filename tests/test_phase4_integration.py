@@ -22,4 +22,19 @@ def test_reinforce_full_pipeline_smoke():
     # Loss-trend sanity: last 3 mean < first 3 mean (loose)
     first_3 = sum(history.losses[:3]) / 3
     last_3 = sum(history.losses[-3:]) / 3
-    assert last_3 != first_3  # at least learning is happening (not flat)
+    # Real learning assertion (P0 v4p4): reward trend must rise OR loss must decrease across episodes.
+    first_3_reward = sum(history.rewards[:3]) / 3
+    last_3_reward = sum(history.rewards[-3:]) / 3
+    # Either rewards improve OR losses shrink — REINFORCE is high-variance, so we OR the conditions.
+    reward_improved = last_3_reward > first_3_reward
+    loss_decreased = last_3 < first_3
+    assert reward_improved or loss_decreased, (
+        f"neither reward trend ({first_3_reward:.3f} -> {last_3_reward:.3f}) "
+        f"nor loss trend ({first_3:.3f} -> {last_3:.3f}) shows learning"
+    )
+    # Determinism: a second run with the same seed must produce identical rewards.
+    env2 = WorkoutEnv(seed=42)
+    policy2 = PolicyNet(hidden=32, seed=42)
+    trainer2 = REINFORCETrainer(policy2, env2, config, seed=42)
+    history2 = trainer2.train()
+    assert history.rewards == history2.rewards, "same seed must produce identical reward trajectory"

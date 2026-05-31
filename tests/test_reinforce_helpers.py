@@ -52,3 +52,37 @@ def test_reinforce_loss_returns_scalar_tensor_with_grad():
     assert loss.dim() == 0
     loss.backward()
     assert all(lp.grad is not None for lp in log_probs)
+
+
+def test_reinforce_loss_gradient_sign_positive_return():
+    """High return → gradient on log_prob of taken action is negative (we want to INCREASE it).
+    L = -E[(G-b) log π]; dL/dlogπ = -(G-b). With G=1, b=0 → dL/dlogπ = -1 < 0.
+    """
+    log_probs = [torch.tensor(0.0, requires_grad=True)]
+    returns = [1.0]
+    loss = reinforce_loss(log_probs, returns, baseline=0.0)
+    loss.backward()
+    assert log_probs[0].grad < 0, f"expected negative grad for positive return; got {log_probs[0].grad}"
+
+
+def test_reinforce_loss_gradient_sign_negative_return():
+    """Negative return → gradient is positive (we want to DECREASE the log_prob)."""
+    log_probs = [torch.tensor(0.0, requires_grad=True)]
+    returns = [-1.0]
+    loss = reinforce_loss(log_probs, returns, baseline=0.0)
+    loss.backward()
+    assert log_probs[0].grad > 0, f"expected positive grad for negative return; got {log_probs[0].grad}"
+
+
+def test_reinforce_loss_baseline_equals_return_zero_loss():
+    """Baseline subtraction: when baseline == G, advantage == 0 → loss == 0 (exact)."""
+    log_probs = [torch.tensor(0.5, requires_grad=True), torch.tensor(-0.3, requires_grad=True)]
+    returns = [5.0, 5.0]
+    loss = reinforce_loss(log_probs, returns, baseline=5.0)
+    assert loss.abs().item() < 1e-6
+
+
+def test_compute_returns_unit_gamma_reverse_cumsum():
+    """gamma=1 → returns are reverse cumulative sum of rewards."""
+    returns = compute_returns([1.0, 2.0, 3.0], gamma=1.0)
+    assert returns == pytest.approx([6.0, 5.0, 3.0])

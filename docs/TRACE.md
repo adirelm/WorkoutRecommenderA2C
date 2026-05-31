@@ -40,15 +40,15 @@ is cut.
 | 1.2 | Brief §1 | פונקציית המטרה J(θ) = E_{τ~π_θ}[ Σ γ^t r_t ]. | docs/THEORY.md §1.2 + src/training/objective.py | test_discounted_return_formula | MUST |
 | 1.3 | Brief §1 | המצב כווקטור של מספרים: דוגמת ה-Cart — ארבעה ערכים מתארים את המצב. | docs/THEORY.md §1.3 + docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002, 12-d state vector spec) | test_state_vector_shape | MUST |
 | 1.4 | Brief §1 | מקומי מול מצטבר: RNN/LSTM/Transformer; POMDP; רצף תצפיות h_t; "מודלי עולם" שאליהם נחזור בפרק 7. | docs/THEORY.md §1.4 + src/model/lstm_world.py | tests/test_lstm_world.py::test_forward_output_shape | MUST |
-| 2.1 | Brief §2 | תהליך האימון: אפיזודה מתחילה ברשת מאותחלת אקראית; דגימת פעולה לפי הסתברויות; שיפור עד סוף האפיזודה. | src/training/reinforce_trainer.py (episode loop) | test_episode_loop_random_init_sample_update | MUST |
+| 2.1 | Brief §2 | תהליך האימון: אפיזודה מתחילה ברשת מאותחלת אקראית; דגימת פעולה לפי הסתברויות; שיפור עד סוף האפיזודה. | src/services/reinforce_trainer.py (episode loop) | test_episode_loop_random_init_sample_update | MUST |
 | 2.2 | Brief §2 | מתי נגמרת אפיזודה: (1) הגעתי לפרס, (2) נכשלתי, (3) נגמרו המצבים. MDP timeout only — cases (1) and (2) collapsed per ADR-005 (no scalar reward target; action-masking in ADR-004 prevents injury-equivalent failure events). | src/env/workout_env.py (case 3 only) + docs/adr/ADR-005-terminal-conditions.md | test_done_after_episode_length_steps + test_action_mask_prevents_injury_event (case-1 N/A — see ADR-005) | MUST |
 | 2.3 | Brief §2 | קרדיט משותף — סך הניקוד מהאפיזודה מחולק לכל הפעולות שלאורכה. | src/training/credit_assignment.py | test_return_propagated_to_all_steps | MUST |
-| 2.4 | Brief §2 | θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t) G_t — REINFORCE update. | src/training/reinforce_update.py | test_reinforce_gradient_update_matches_formula | MUST |
+| 2.4 | Brief §2 | θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t) G_t — REINFORCE update. | src/services/reinforce_helpers.py + src/services/reinforce_trainer.py | test_reinforce_gradient_update_matches_formula | MUST |
 | 2.5 | Brief §2 | טריק נגזרת הלוג: ∇p = p ∇log p; model-free sample-based estimator. | docs/THEORY.md §2.5 (derivation) | test_log_derivative_identity_numerically | MUST |
-| 2.6 | Brief §2 | הקשר ל-Cross Entropy: One-Hot של הפעולה שנדגמה; ההפרש מוכפל ב-G_t. | src/training/loss.py (weighted CE) | test_reinforce_loss_equals_weighted_cross_entropy | MUST |
-| 2.7 | Brief §2 | שקילות מתמטית ל-Cross Entropy: implementable via PyTorch CE on GPU, ללא אופטימייזר מיוחד. | src/training/loss.py + README §Implementation Notes | test_uses_torch_crossentropy_backend | MUST |
+| 2.6 | Brief §2 | הקשר ל-Cross Entropy: One-Hot של הפעולה שנדגמה; ההפרש מוכפל ב-G_t. | src/services/reinforce_helpers.py (weighted CE) | test_reinforce_loss_equals_weighted_cross_entropy | MUST |
+| 2.7 | Brief §2 | שקילות מתמטית ל-Cross Entropy: implementable via PyTorch CE on GPU, ללא אופטימייזר מיוחד. | src/services/reinforce_helpers.py + README §Implementation Notes | test_uses_torch_crossentropy_backend | MUST |
 | 3.1 | Brief §3 | מסלול של 10 צעדים, פעולה חריגה אחת הפילה את הניקוד למינוס 10; הראשונות נענשות. | docs/THEORY.md §3.1 (worked example) | test_noise_example_unfair_punishment | SHOULD |
-| 3.2 | Brief §3 | הפתרון: החסרת הממוצע — קו בסיס b: θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t)(G_t − b). | src/training/baseline.py | test_baseline_subtraction_in_update | MUST |
+| 3.2 | Brief §3 | הפתרון: החסרת הממוצע — קו בסיס b: θ ← θ + α Σ_t ∇_θ log π_θ(a_t\|s_t)(G_t − b). | src/services/baseline.py | test_baseline_subtraction_in_update | MUST |
 | 3.3 (inferred) | Brief §3 | קו בסיס b(s) לא תלוי ב-a → לא מטה את הגרדיאנט (control variate). | docs/THEORY.md §3.3 (proof) + tests | test_baseline_unbiased_gradient | MUST |
 | 3.4 (inferred) | Brief §3 | Bias-Variance Trade-off: כאן צמצום שונות ללא הטיה. | docs/THEORY.md §3.4 + results/variance_comparison.png | test_variance_reduction_empirical | SHOULD |
 | D1 | Brief §7.2 | Kaggle dataset adnanelouardi/600k-fitness-exercise-and-workout-program-dataset; ODbL 1.0 license; cite in submission | docs/PRD.md §1.3 + docs/adr/ADR-002 + README §References | test_dataset_slug_in_config | MUST |
@@ -59,7 +59,7 @@ is cut.
 | D6 | Brief §7.7 | Submission cites dataset URL + key files + license + chosen program (PHUL primary) | README §Dataset + docs/PRD.md §10 | test_readme_cites_dataset_url | MUST |
 | DA1 | Brief §7.1.2 Part A | Formal written MDP definition (state/action/reward/transition) + pipeline pseudocode | docs/THEORY.md §1.1-1.4 + docs/PRD.md §1.5-1.7 | test_part_a_mdp_writeup_present | MUST |
 | DA2 | Brief §7.3.1 Part C | LSTM loss curves (train + val) + temporal-pattern discussion | results/lstm_loss.png + notebooks/analysis.ipynb cell 3 — DEFERRED TO PHASE 7 (analysis notebook) | test_lstm_loss_chart_exists | MUST |
-| DA3 | Brief §7.4.3 Part D | REINFORCE training Loss curve + avg-return graph + weekly-load variance diagnostic | results/reinforce_rewards.png + results/reinforce_variance.png + notebooks/analysis.ipynb cell 5 | test_reinforce_reward_chart_exists | MUST |
+| DA3 | Brief §7.4.3 Part D | REINFORCE training Loss curve + avg-return graph + weekly-load variance diagnostic | results/reinforce_rewards.png + results/reinforce_variance.png + notebooks/analysis.ipynb cell 5 — DEFERRED TO PHASE 7 (analysis notebook) | test_reinforce_reward_chart_exists | MUST |
 | DA4 | Brief §7.5.1 Part E | A2C actor+critic Loss curves + side-by-side REINFORCE vs A2C comparison | results/a2c_training.png + results/comparison.png + notebooks/analysis.ipynb cells 7-8 | test_a2c_and_comparison_charts_exist | MUST |
 | DA5 | Brief §7.7 | Submission-list roll-up: preprocessing code + trainee trajectory + LSTM impl + REINFORCE impl + A2C impl + summary discussion | tests/test_submission_manifest.py asserts each artefact path | test_submission_manifest_all_present | MUST |
 | DA6 | Brief eq. 15 + eq. 17 | Reward eq.15 unit-test + Advantage eq.17 unit-test (first-class binding, not buried in ADR) | src/env/reward.py + src/training/a2c.py | test_spec_eq15_reward_decomposition + test_spec_eq17_advantage | MUST |
@@ -72,10 +72,10 @@ is cut.
 | AM2 | Brief §7.6.1 | Simplified-reward acknowledgement + hierarchical-decision limitation discussion | notebooks/analysis.ipynb §reward-simplification + README §Honest Limitations (d) | n/a | MUST |
 | TR1 | Transcript / grading_hints | MUST DELIVER: explicit REINFORCE vs A2C side-by-side comparison with graphs (01:20:34). | results/comparison/reinforce_vs_a2c.png + docs/ANALYSIS.md | test_both_agents_train_to_completion | MUST |
 | TR2 | Transcript / grading_hints | STATE/ACTION DESIGN IS GRADED: justify which dataset columns become actions vs states (01:18:27). | docs/STATE_DESIGN.md (pointer to PRD §1.5 + ADR-002) + docs/ACTION_DESIGN.md (pointer to PRD §1.6 + ADR-004, 7-action set) | n/a (doc artifact) | MUST |
-| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/training/rl_on_world_model.py — DEFERRED TO PHASE 4 (REINFORCE) | test_pipeline_lstm_then_rl | MUST |
-| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/training/rl_on_world_model.py (requires_grad=False) — DEFERRED TO PHASE 4 (REINFORCE) | test_lstm_params_frozen_during_rl | MUST |
-| TR5 | Transcript / grading_hints | SIMPLE NET: 1-layer FC, 128 neurons (01:06:59). | src/policy/policy_net.py (architecture) + config/config.yaml | test_policy_net_hidden_size_128_single_layer | MUST |
-| TR6 | Transcript / grading_hints | STOCHASTIC POLICY DURING TRAINING: sample (Categorical), not argmax. | src/policy/policy_net.py (sample at train) | test_training_uses_categorical_sample_not_argmax | MUST |
+| TR3 | Transcript / grading_hints | TWO-STAGE PIPELINE: (a) LSTM world model on Kaggle historical data; (b) REINFORCE/A2C on top. | src/model/lstm_world.py + src/services/rl_on_world_model.py — BOUND — src/services/reinforce_trainer.py wires PolicyNet onto frozen LSTMWorldModel via LSTMEnvAdapter (Phase 3+4 join) | test_pipeline_lstm_then_rl | MUST |
+| TR4 | Transcript / grading_hints | FREEZE THE LSTM during RL phase (01:20:14). | src/services/rl_on_world_model.py (requires_grad=False) — BOUND — model.freeze() called pre-RL in Phase 4 trainer path; LSTMEnvAdapter __init__ asserts is_frozen | test_lstm_params_frozen_during_rl | MUST |
+| TR5 | Transcript / grading_hints | SIMPLE NET: 1-layer FC, 128 neurons (01:06:59). | src/model/policy_net.py (architecture) + config/config.yaml | test_policy_net_hidden_size_128_single_layer | MUST |
+| TR6 | Transcript / grading_hints | STOCHASTIC POLICY DURING TRAINING: sample (Categorical), not argmax. | src/model/policy_net.py (sample at train) | test_training_uses_categorical_sample_not_argmax | MUST |
 | TR7 | Transcript / grading_hints | Check latest assignment PDF before starting (uploaded late). | docs/SOURCES.md (assignment PDF hash + date) | n/a (process artifact) | SHOULD |
 | TR8 | Transcript / grading_hints | DEADLINE FLEXIBILITY: lecturer is open if asked; late penalties not fixed. | docs/SUBMISSION.md note + email-trail evidence if requested | n/a | NICE |
 | TR9 | Transcript / grading_hints | Future lectures workshop-style — schedule accordingly. | docs/PLAN.md (schedule section) | n/a | NICE |
@@ -164,3 +164,7 @@ PRD) before the submission tag is cut.
 ## Phase-3 freshness sweep (2026-05-31)
 
 Path: TRACE planned `src/world_model/` but as-built layout is `src/model/` for all LSTM modules. Updated rows: 1.4, F4, F6, DA6-eq.17, TR3, TR4. Underlying tests pass identically; only the path/test-id strings drifted between the planning workflow and Phase-3 implementation.
+
+## Phase-4 freshness sweep (2026-05-31)
+
+The Phase-4 build placed PolicyNet under `src/model/` and the REINFORCE trainer + helpers under `src/services/` (rather than the planned `src/policy/` + `src/training/` paths). Updated rows: TR5, TR6, 2.1, 2.4, 2.6, 2.7, 3.2. Three filename collapses: `reinforce_update.py` + `loss.py` → `src/services/reinforce_helpers.py` (rows 2.4, 2.6, 2.7). DA3 explicitly deferred to Phase 7. TR3/TR4 closed.

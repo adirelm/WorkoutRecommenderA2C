@@ -383,6 +383,13 @@ class WorldModelResult:
     history: LSTMTrainHistory   # train_loss, val_loss, best_epoch — consumed by notebook Phase 7
 
 
+@dataclass(frozen=True)
+class ReinforceResult:
+    handle: PolicyHandle
+    history: REINFORCEHistory   # episodes_run, rewards, losses, baseline, seed — consumed by §7.4 comparison plots
+    config: REINFORCEConfig     # hyperparameters used (lr, gamma, episodes, baseline_alpha, ...)
+
+
 class WorldModelHandle:
     def rollout(
         self, initial_state: State, policy: Callable[[State], int], horizon: int
@@ -399,6 +406,13 @@ vector inside `WorkoutRecommendation` is fixed-length 7.
 PRD §6 updated 2026-05-31 (Phase 3 validation) to expose `LSTMTrainHistory`,
 world-model rollout, action mask, and the `world_model` argument to
 `recommend()`. Phase 6 (SDK facade) implements these signatures.
+
+PRD §6 updated 2026-05-31 (Phase 4 REINFORCE landing) to inline `ReinforceResult`
+with its `REINFORCEHistory` + `REINFORCEConfig` fields — symmetric with the
+`WorldModelResult` / `LSTMTrainHistory` pattern above. The dataclasses ship
+in `src/services/types.py` and are the analysis-notebook contract for §7.4
+reward-curve and baseline-trace plots. `REINFORCETrainer` itself stays an
+implementation detail behind `TrainingSDK.train_reinforce()`.
 
 ---
 
