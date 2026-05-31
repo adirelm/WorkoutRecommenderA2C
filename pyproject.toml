@@ -60,6 +60,8 @@ ignore = ["E501"]    # line-length is handled by formatter
 "scripts/run_lambda_sensitivity.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
 # LR-sweep script: math glyphs (×, σ) in docstrings/comments/strings are intentional.
 "scripts/run_lr_sweep.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
+# Seeded comparison script: math glyphs (×, σ, ±) in docstrings/comments/strings are intentional.
+"scripts/run_seeded_comparison.py" = ["RUF001", "RUF002", "RUF003", "PLR2004"]
 # Streamlit GUI helpers: zip(strict=) noise on st.columns iteration is not worth the churn.
 "src/gui/components.py" = ["B905"]
 "src/gui/state.py" = ["SIM118"]  # st.session_state.keys() is the documented Streamlit API
