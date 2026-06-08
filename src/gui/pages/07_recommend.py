@@ -11,7 +11,6 @@ from __future__ import annotations
 import streamlit as st
 
 from src.env.state import STATE_CHANNEL_NAMES
-from src.env.workout_env import WorkoutEnv
 from src.gui.components import hero, info_card, page_footer
 from src.gui.labels import STATE_CHANNEL_LABEL
 from src.gui.pages._recommend_ui import (
@@ -58,7 +57,7 @@ def render() -> None:
             info_card("Recommendation failed", str(exc))
     rec = gui.get("last_recommendation")
     if rec is not None:
-        env = WorkoutEnv(seed=42)
+        env = get_sdk().ensure_env()
         env.reset()
         render_result(rec, [bool(m) for m in env.action_mask().tolist()])
         if st.button(

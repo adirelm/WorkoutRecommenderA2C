@@ -10,7 +10,7 @@ from src.gui.state import GUIState, get_sdk, set_last_world_model_history
 from src.model.dataset import build_windows, split_train_val
 from src.model.lstm_trainer import LSTMTrainer
 from src.model.lstm_world import LSTMWorldModel
-from src.model.trajectory_builder import generate_trajectory
+from src.model.program_trajectory import generate_program_trajectory
 from src.model.types import LSTMTrainConfig, LSTMTrainHistory
 
 HIDDEN_OPTIONS: tuple[int, ...] = (16, 32, 64, 128)
@@ -82,7 +82,7 @@ def _train_live(trainer: LSTMTrainer, train_w, val_w, epochs: int) -> LSTMTrainH
 
 def run_training(state: GUIState, params: dict[str, float | int]) -> None:
     """Build dataset + model, then drive the live training loop."""
-    trajectory = generate_trajectory(num_days=28, seed=get_sdk().seed)
+    trajectory = generate_program_trajectory(seed=get_sdk().seed)
     windows = build_windows(trajectory, window_len=int(params["window_len"]))
     train_w, val_w = split_train_val(windows, val_days=7)
     if not train_w or not val_w:

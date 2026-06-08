@@ -52,13 +52,10 @@ class WorkoutSDK:
 
     def __init__(self, seed: int = 42, use_world_model: bool = True) -> None:
         self.seed = int(seed)
-        # When True (default), training rolls out against the frozen LSTM world
-        # model fitted on the real PHUL trajectory (brief §7.4/§7.5, audit F-1);
-        # when False, the analytic SyntheticTrainee env is used (fast unit tests).
+        # True (default): roll out against the frozen real-PHUL LSTM env (brief
+        # §7.4/§7.5, audit F-1). False: analytic SyntheticTrainee env (fast tests).
         self.use_world_model = bool(use_world_model)
-        # Touch the YAML loader so config.yaml is proven reachable from src/
-        # (V3 §7.3 single source of truth — closes code-config-loaded gate).
-        self.config_version: str = get_version()
+        self.config_version: str = get_version()  # proves config.yaml reachable (V3 §7.3)
         self._env: WorkoutEnv | None = None
         self._last_policy_handle: PolicyHandle | None = None
         self._last_net: PolicyNet | ActorCriticNet | None = None
@@ -89,16 +86,12 @@ class WorkoutSDK:
 
     # ------------------------------------------------------------- trainers
     def train(self, algo: str, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory | A2CHistory]:
-        """Pure registry-driven trainer dispatch (V3 §12 open-closed).
+        """Registry-driven trainer dispatch (V3 §12 open-closed).
 
-        Looks up ``algo`` in :attr:`_TRAINER_REGISTRY`, delegates net+config
-        wiring to the trainer's own ``build`` classmethod, runs ``train()``,
-        caches the trained net + handle, and returns the
-        ``(handle, history)`` tuple the CLI / GUI / tests already consume.
-
-        Adding a new algo (e.g. PPO) is a registry-only change: subclass
-        :class:`BaseTrainer`, implement ``build`` + ``train`` + ``net``, and
-        register the class — no edits to this method body.
+        Looks up ``algo`` in :attr:`_TRAINER_REGISTRY`, lets the trainer's own
+        ``build`` classmethod wire net+config, runs it, caches the net+handle,
+        and returns ``(handle, history)``. Adding an algo (e.g. PPO) = subclass
+        :class:`BaseTrainer` + register it; no edits to this method body.
         """
         key = algo.lower()
         if key not in self._TRAINER_REGISTRY:
@@ -150,12 +143,8 @@ class WorkoutSDK:
 
     # --------------------------------------------------------------- helpers
     def ensure_env(self) -> WorkoutEnv:
-        """Return the cached WorkoutEnv, building one via prepare_data() if needed.
-
-        Public API (V3 §4 encapsulation fix) — GUI / notebook callers that need
-        direct env access (e.g. for trajectory rollouts) call this instead of
-        reaching into the previously-private ``_ensure_env``.
-        """
+        """Return the cached env, building it on first use. Public API (V3 §4) so
+        GUI / notebook callers get env access without reaching into internals."""
         if self._env is None:
             self._env = self._build_env()
         return self._env

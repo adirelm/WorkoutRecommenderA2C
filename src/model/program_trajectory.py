@@ -34,17 +34,17 @@ _DOMINANT_ACTION: dict[str, int] = {
     "cardio": 5,
     "mobility": 6,
 }
-# A day that loads BOTH push and pull above this share is a PHUL "upper" day →
-# FullBody (classification heuristic, like the muscle-keyword maps in preprocessor).
+# Default min push & pull share for a day to count as a PHUL "upper" day → FullBody.
+# Config-driven via dataset.upper_day_share; this constant is the fallback default.
 _UPPER_DAY_SHARE: float = 0.25
 
 
-def entry_to_action(entry: DailyEntry) -> int:
+def entry_to_action(entry: DailyEntry, upper_day_share: float = _UPPER_DAY_SHARE) -> int:
     """Map one aggregated daily session to a discrete env action id."""
     if entry.is_rest_day:
         return 0
     dist = entry.muscle_distribution
-    if dist.get("push", 0.0) >= _UPPER_DAY_SHARE and dist.get("pull", 0.0) >= _UPPER_DAY_SHARE:
+    if dist.get("push", 0.0) >= upper_day_share and dist.get("pull", 0.0) >= upper_day_share:
         return 4
     dominant = max(dist, key=lambda k: dist[k]) if dist else "push"
     return _DOMINANT_ACTION.get(dominant, 4)
@@ -68,6 +68,7 @@ def generate_program_trajectory(
     cfg = config if config is not None else load_config()
     cycle_days = int(num_days if num_days is not None else cfg["dataset"]["program_cycle_days"])
     scale = float(cfg["dataset"]["program_volume_scale"])
+    upper_share = float(cfg["dataset"]["upper_day_share"])
 
     _name, cleaned = load_chosen_program(cfg)
     entries = insert_rest_days(daily_aggregate(cleaned), cycle_days)
@@ -76,7 +77,7 @@ def generate_program_trajectory(
     state = State.initial()
     trajectory: list[tuple[State, int, State]] = []
     for entry in entries:
-        action = entry_to_action(entry)
+        action = entry_to_action(entry, upper_share)
         next_state = trainee.next_state(
             state,
             action_id=action,

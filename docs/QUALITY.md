@@ -6,7 +6,7 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 
 ## 1. Functional Suitability (completeness, correctness, appropriateness)
 - Brief §7 deliverables all present: see docs/TRACE.md
-- 418 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85
+- 431 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85 (91% actual)
 - Acceptance criteria documented per feature in docs/PRD.md
 
 ## 2. Performance Efficiency (time-behavior, resource-utilization, capacity)
@@ -39,7 +39,7 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 ## 6. Security (confidentiality, integrity, authenticity, non-repudiation, accountability)
 - No secrets in source (V3 §7.4)
 - .env in .gitignore; .env-example committed with placeholders
-- PII redaction policy documented in CLAUDE.md
+- No secrets/PII in tracked content (no .env/.pem/.key/credentials; notebook outputs scrubbed of absolute paths); `.env-example` committed, `.env` git-ignored
 - Kaggle credentials via ~/.kaggle/kaggle.json (not committed)
 
 ## 7. Maintainability (modularity, reusability, analysability, modifiability, testability)
@@ -102,5 +102,5 @@ lesson. This grade is committed here in the public docs so it is verifiable
 without inspecting the (gitignored) Moodle cover sheet.
 
 Breakdown justification: implementation hygiene strong (TDD + ≥85% cov + ruff
-clean + 10 ADRs); experimental rigor middling (10 seeds is Spinning Up floor,
+clean + 8 ADRs); experimental rigor middling (10 seeds is Spinning Up floor,
 not confidence level); documentation thorough (3 audit rounds + 14 fix passes).

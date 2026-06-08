@@ -1,13 +1,12 @@
 """§7.3 LSTM world-model training page (Phase 9 GUI).
 
-ADR-006 GUI-layer exception: :class:`WorkoutSDK` does not expose
-``train_world_model`` (it raises ``NotImplementedError`` — the SDK is
-policy-only), so this page instantiates :class:`LSTMWorldModel` +
-:class:`LSTMTrainer` directly to live-stream the loss curve. The
-trajectory comes from ``src.model.trajectory_builder.generate_trajectory``
-(it returns the ``(state, action, next_state)`` triples that
-``build_windows`` expects) and never leaves the GUI layer. All other
-pages stay SDK-only.
+ADR-006 GUI-layer exception: this page instantiates :class:`LSTMWorldModel`
++ :class:`LSTMTrainer` directly so the user can live-stream the loss curve
+while tuning hidden-size / layers / epochs with sliders (``WorkoutSDK.
+train_world_model`` runs a fixed config; interactive sliders need the trainer
+directly). The trajectory comes from the real chosen Kaggle program via
+``src.model.program_trajectory.generate_program_trajectory`` — the same
+source the SDK uses. All other pages stay SDK-only.
 """
 
 from __future__ import annotations

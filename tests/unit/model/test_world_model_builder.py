@@ -8,12 +8,27 @@ from __future__ import annotations
 
 from src.env.state import STATE_DIM, State
 from src.model.lstm_env_adapter import LSTMEnvAdapter
-from src.model.world_model_builder import build_lstm_env, train_program_world_model
+from src.model.world_model_builder import (
+    build_lstm_env,
+    train_program_world_model,
+    world_model_history,
+)
 
 
 def test_world_model_is_trained_and_frozen() -> None:
     model = train_program_world_model(seed=42, epochs=3)
     assert model.is_frozen()
+
+
+def test_world_model_history_reports_loss_curves() -> None:
+    """world_model_history exposes the fit history (loss curves + best epoch)."""
+    hist = world_model_history(seed=42, epochs=3)
+    assert hist.epochs_run == 3
+    assert len(hist.train_loss) == 3
+    assert len(hist.val_loss) == 3
+    assert 0 <= hist.best_epoch < 3
+    # Memoised: same (seed, epochs) returns the identical history object as the model fit.
+    assert world_model_history(seed=42, epochs=3) is hist
 
 
 def test_build_lstm_env_uses_lstm_adapter_as_transition() -> None:
