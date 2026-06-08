@@ -53,3 +53,6 @@ results/checkpoints/
 
 # OS
 Thumbs.db
+
+# coverage annotate artifacts
+*,cover

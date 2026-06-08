@@ -23,6 +23,17 @@ from src.env.workout_env_helpers import (
     update_muscle_share,
     zero_share,
 )
+from src.utils.config_loader import load_config
+
+
+def _mask_service_from_config() -> ActionMaskService:
+    """Build ActionMaskService with thresholds from config.yaml (CLAUDE.md §4 — no hardcoding)."""
+    am = load_config()["action_masking"]
+    return ActionMaskService(
+        rest_streak_threshold=int(am["rest_streak_threshold_days"]),
+        legs_soreness_threshold=float(am["legs_soreness_threshold"]),
+        conditioning_overload_threshold=float(am["conditioning_overload_threshold"]),
+    )
 
 
 @dataclass(frozen=True)
@@ -55,11 +66,17 @@ class WorkoutEnv:
         mask_service: ActionMaskService | None = None,
         seed: int = 42,
     ) -> None:
+        """Compose the env from a transition provider, reward fn, and action-mask service.
+
+        ``trainee`` (the transition provider) defaults to a seeded SyntheticTrainee;
+        inject an ``LSTMEnvAdapter`` to roll out against the frozen world model.
+        ``mask_service`` defaults to thresholds loaded from ``config.yaml``.
+        """
         self.cfg = env_config if env_config is not None else EnvConfig()
         self._reward_cfg = reward_config
         self._reward_fn = RewardFunction(reward_config)
         self._injected_trainee = trainee
-        self._mask_service = mask_service if mask_service is not None else ActionMaskService()
+        self._mask_service = mask_service if mask_service is not None else _mask_service_from_config()
         self._seed = int(seed)
         self._trainee: SyntheticTrainee = self._build_trainee()
         self._state: State = State.initial()
@@ -72,10 +89,12 @@ class WorkoutEnv:
     # ----------------------------------------------------------------- props
     @property
     def action_space(self) -> int:
+        """Number of discrete actions (ACTION_COUNT = 7)."""
         return ACTION_COUNT
 
     @property
     def state_dim(self) -> int:
+        """Dimensionality of the state vector (STATE_DIM = 12)."""
         return STATE_DIM
 
     # ----------------------------------------------------------------- core
@@ -130,10 +149,12 @@ class WorkoutEnv:
         return self._mask.copy()
 
     def history(self) -> list[int]:
+        """Return a copy of the action-id history taken so far this episode."""
         return list(self._history)
 
     # ---------------------------------------------------------- internals
     def _build_trainee(self) -> SyntheticTrainee:
+        """Return the injected transition provider, or a fresh seeded SyntheticTrainee."""
         if self._injected_trainee is not None:
             return self._injected_trainee
         return SyntheticTrainee(rng=np.random.default_rng(self._seed))

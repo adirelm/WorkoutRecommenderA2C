@@ -43,6 +43,7 @@ reinforce:
   episodes: 500
   baseline_alpha: 0.05       # running-mean update rate
   entropy_coef: 0.0          # vanilla REINFORCE has no entropy bonus
+  grad_clip_norm: 1.0        # gradient-norm clip (mirrors REINFORCEConfig default)
 
 a2c:
   actor_hidden: 128
@@ -57,7 +58,7 @@ a2c:
 action_masking:
   rest_streak_threshold_days: 3      # mask Rest if last 3 days all Rest
   legs_soreness_threshold: 0.8       # mask Legs if soreness_legs > this
-  conditioning_overload_threshold: 1.0   # mask Conditioning/HIIT if overload_t > this
+  conditioning_overload_threshold: 1.2   # mask Conditioning/HIIT if overload_t > this (matches ADR-004)
   mobility_always_legal: true
 
 dataset:
@@ -72,6 +73,7 @@ dataset:
   program_filter_max_minutes: 120
   program_cycle_days: 84              # 12 real PHUL weeks × 7 days (rest days inserted into gaps)
   program_volume_scale: 0.05         # scales real Σ(sets·reps) volume into the env's reward regime
+  upper_day_share: 0.25              # min push & pull share for a day to classify as an "upper"/FullBody day
   license_acknowledgement: "ODbL 1.0 — Boostcamp.app — non-commercial use only — cited in submission"
 
 paths:

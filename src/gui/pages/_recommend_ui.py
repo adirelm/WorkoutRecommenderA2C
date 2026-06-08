@@ -7,11 +7,10 @@ from dataclasses import fields
 import streamlit as st
 
 from src.env.state import ACTION_NAMES, STATE_CHANNEL_NAMES, State
-from src.env.workout_env import WorkoutEnv
 from src.gui.charts import action_probability_bar, reward_decomposition_bar
 from src.gui.components import info_card, metric_row
 from src.gui.labels import STATE_CHANNEL_HELP, STATE_CHANNEL_LABEL
-from src.gui.state import GUIState, get_last_a2c_history, get_last_reinforce_history
+from src.gui.state import GUIState, get_last_a2c_history, get_last_reinforce_history, get_sdk
 
 BOUNDS: dict[str, tuple[float, float, float]] = {
     "fatigue": (0.0, 1.0, 0.05),
@@ -95,8 +94,8 @@ def render_result(rec, mask: list[bool]) -> None:
 
 
 def apply_action(action_id: int, gui: GUIState) -> None:
-    """Advance one env.step from a fresh env and stash the resulting next-state."""
-    env = WorkoutEnv(seed=42)
+    """Advance one env.step from the SDK env (frozen-LSTM transition) and stash the next-state."""
+    env = get_sdk().ensure_env()
     env.reset()
     next_state, reward, done, info = env.step(int(action_id))
     gui.set("last_next_state", next_state)

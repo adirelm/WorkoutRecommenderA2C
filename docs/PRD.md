@@ -436,10 +436,10 @@ class TrainingSDK:
     ) -> WorkoutRecommendation:
         """next_state in the recommendation comes from world_model.rollout(state, ...)"""
 
-    # Action masking surface (ADR-004)
-    def action_mask(self, state: State, history: list[int]) -> np.ndarray:
-        """Returns a bool array of shape (ACTION_COUNT,) — UIs need this to
-        display "valid recommendations only"."""
+    # Action masking surface (ADR-004): exposed on the env, not the SDK facade.
+    # UIs call ``sdk.ensure_env().action_mask()`` (no args — masks the env's
+    # current state) to display "valid recommendations only". recommend() also
+    # applies the mask internally before argmax.
 
 
 @dataclass(frozen=True)
