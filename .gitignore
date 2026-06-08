@@ -37,8 +37,13 @@ instructions/
 # Moodle cover sheet — contains PII (ID card + personal name + self-grade); upload to moodle ONLY, never commit
 adrl-001-ex*.pdf
 
-# Runtime data (regenerated; not version-controlled)
-data/raw/
+# Runtime data — ignored EXCEPT the committed real Kaggle inputs the pipeline
+# depends on (full real summary + the §7.2.4 real PHUL subset). The full 294MB
+# detailed boostcamp CSV is downloaded on demand and stays ignored.
+data/raw/*
+!data/raw/program_summary.csv
+!data/raw/programs_detailed_phul_subset.csv
+data/raw/programs_detailed_boostcamp_kaggle.csv
 data/processed/
 results/checkpoints/
 # results/figures/  # tracked: §7.7 plot deliverables (submission artifacts, not runtime)

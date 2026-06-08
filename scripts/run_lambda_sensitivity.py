@@ -32,8 +32,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.env.reward import RewardConfig  # noqa: E402
-from src.env.workout_env import WorkoutEnv  # noqa: E402
 from src.model.policy_net import PolicyNet  # noqa: E402
+from src.model.world_model_builder import build_lstm_env, train_program_world_model  # noqa: E402
 from src.services.reinforce_trainer import REINFORCETrainer  # noqa: E402
 from src.services.types import REINFORCEConfig  # noqa: E402
 
@@ -68,10 +68,10 @@ def build_reward_config(defaults: dict, lambda_1: float, lambda_2: float) -> Rew
     )
 
 
-def train_one_run(lambda_1: float, lambda_2: float, defaults: dict, seed: int) -> float:
-    """Train REINFORCE once with the given λ pair and seed; return last-WINDOW mean."""
+def train_one_run(lambda_1: float, lambda_2: float, defaults: dict, seed: int, model) -> float:
+    """Train REINFORCE over the frozen LSTM env (real PHUL) with the given λ pair/seed."""
     reward_cfg = build_reward_config(defaults, lambda_1, lambda_2)
-    env = WorkoutEnv(reward_config=reward_cfg, seed=seed)
+    env = build_lstm_env(seed=seed, model=model, reward_config=reward_cfg)
     policy = PolicyNet(seed=seed)
     trainer_cfg = REINFORCEConfig(episodes=SHORT_EPISODES)
     history = REINFORCETrainer(policy, env, trainer_cfg, seed=seed).train(episodes=SHORT_EPISODES)
@@ -83,9 +83,10 @@ def run_sweep() -> np.ndarray:
     """Iterate the 5×5×3 grid; return (len(L1), len(L2)) matrix of seed-averaged means."""
     defaults = load_reward_defaults()
     matrix = np.zeros((len(LAMBDA_1_GRID), len(LAMBDA_2_GRID)), dtype=float)
+    model = train_program_world_model(seed=SEEDS[0])  # fixed transition; reward λ varies
     for i, l1 in enumerate(LAMBDA_1_GRID):
         for j, l2 in enumerate(LAMBDA_2_GRID):
-            per_seed = [train_one_run(l1, l2, defaults, s) for s in SEEDS]
+            per_seed = [train_one_run(l1, l2, defaults, s, model) for s in SEEDS]
             cell_mean = float(np.mean(per_seed))
             matrix[i, j] = cell_mean
             print(

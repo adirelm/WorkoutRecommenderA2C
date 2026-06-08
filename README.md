@@ -2,10 +2,11 @@
 
 An attempt to reproduce the §7 pipeline of Assignment 3 — an LSTM transition
 model standing in for the unknown environment dynamics, with REINFORCE
-(Williams 1992) and synchronous A2C (Mnih et al. 2016) trained against the
-learned world model. The trainee is a single synthetic person whose plan-content
-trajectory is bootstrapped from a Kaggle workout-program dataset (PHUL,
-12 weeks). The repository is the human-architect / AI-implementer contract
+(Williams 1992) and synchronous A2C (Mnih et al. 2016) trained by rolling out
+against the **frozen LSTM world model**. That world model is fitted on the
+day-level trajectory of a real chosen Kaggle program (**Optimized PHUL**, 12
+weeks), loaded end-to-end from the committed dataset; the trainee simulator
+supplies only the physiological response the dataset cannot. The repository is the human-architect / AI-implementer contract
 described in `CLAUDE.md §1.4`: the human owns the spec, the rubric, and the
 sign-off; the AI writes the code against the approved spec.
 
@@ -139,13 +140,17 @@ This project uses the **600K+ Fitness Exercise & Workout Program Dataset**
 - URL: https://www.kaggle.com/datasets/adnanelouardi/600k-fitness-exercise-and-workout-program-dataset
 - License: ODbL 1.0 — non-commercial use only
 - Source: Boostcamp.app
-- Chosen program for the synthetic trainee: **PHUL** (12 weeks, 60 min/session,
-  intermediate, strength+hypertrophy hybrid). Fallbacks declared in
-  `config/config.yaml` under `dataset.fallback_programs`:
-  GZCLP, nSuns 5/3/1.
-- The brief's `programs_detailed_boostcamp_kaggle.csv` is named
-  `fitness_exercises.csv` in the actual download; both name conventions are
-  handled in `src/data/kaggle_client.py`.
+- Chosen program (real, §7.2.4): **Optimized PHUL (Power Hypertrophy Upper Lower)**
+  — Full Gym, 12 weeks, 90 min/session, 4 days/week. Fallbacks in
+  `config/config.yaml` (`dataset.fallback_programs`): "PHUL 12 Week Program!",
+  "PHUL Full Body". The pipeline loads these real rows end-to-end
+  (`src/data/program_loader.py` → `src/model/program_trajectory.py`).
+- **Committed inputs** (so the pipeline is reproducible without Kaggle creds):
+  the real `data/raw/program_summary.csv` (2,598 programs) and the §7.2.4
+  PHUL subset `data/raw/programs_detailed_phul_subset.csv` (the chosen program's
+  real exercise rows, extracted from the 294 MB `programs_detailed_boostcamp_kaggle.csv`).
+  Refresh the full file any time via `kaggle datasets download -d <slug> --unzip`
+  into `data/raw/` (it stays git-ignored).
 - See PRD §1.5.0 for the data-quality contract: negative rep counts are
   reclassified as seconds (time-encoded exercises like planks); rest days are
   inserted on cycle gaps; license acknowledgement is asserted in tests.

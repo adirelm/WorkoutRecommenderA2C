@@ -4,17 +4,35 @@ All notable changes to this project. Format loosely follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed — real-data + LSTM→RL integration (audit findings F-1, F-2)
+- **F-1 (LSTM→RL wiring).** REINFORCE and A2C now roll out against the **frozen LSTM
+  world model** (brief §7.4/§7.5), not the hand-coded SyntheticTrainee. New
+  `src/model/world_model_builder.py` fits + freezes the LSTM and `build_lstm_env`
+  injects `LSTMEnvAdapter` as the `WorkoutEnv` transition provider; `WorkoutEnv.reset`
+  now seeds the adapter's history each episode. SDK (`use_world_model=True` default),
+  `run_seeded_comparison`, `run_lr_sweep`, `run_lambda_sensitivity`, and the analysis
+  notebook all route RL through the LSTM env. Previously the adapter was dead code
+  (test-only) and all RL figures came from the analytic simulator.
+- **F-2 (real Kaggle data wired end-to-end).** New `src/data/program_loader.py` +
+  `src/model/program_trajectory.py` load the **real** committed Kaggle inputs
+  (`data/raw/program_summary.csv` + the §7.2.4 PHUL exercise subset), select
+  *Optimized PHUL (Power Hypertrophy Upper Lower)*, infer muscle groups, apply the
+  data-quality contract (26 real time-encoded rows converted), and build the day-level
+  trajectory the LSTM trains on. Previously `src/data/*` was imported only by tests.
+- All four figures regenerated over the integrated real-PHUL → LSTM → RL pipeline;
+  docs (THEORY/PRD/EXPERIMENTS/README) corrected to match (they had claimed the
+  integration that the code did not implement).
+
 ### Added
-- **Phase 10 — optimized results sweep** (4 parallel optimization runs):
-  - LSTM trained to convergence (2000 epochs with early-stop tracking, best val MSE = 1.9772 @ epoch 1106; replaces the 12-epoch caveat chart) (e13aeb3)
-  - REINFORCE-vs-A2C comparison upgraded to **10 seeds × 50 episodes** with Welch's t-test (t = −1.395, p = 0.180 — still not significant at α=0.05; bands still overlap) (811f2a4)
-  - λ_1 × λ_2 sensitivity expanded from 3×3 single-seed to **5×5 grid × 3 seeds/cell** (75 REINFORCE runs); revealed the prior "dead λ_1 axis" was a seed=42 artefact — both reward axes are now active (6a8ba41)
-  - New REINFORCE **learning-rate sensitivity sweep** (5 lrs × 3 seeds × 30 episodes); 1e-3 dominates the 3e-4 OpenAI default by a full decade on both mean and variance (f36f9bd)
+- **Results sweep** (all over the frozen real-PHUL LSTM env after the F-1/F-2 fix):
+  - LSTM trained to convergence on the real PHUL trajectory (2000 epochs, best val MSE ≈ 0.5725 @ epoch ~575)
+  - REINFORCE-vs-A2C comparison at **10 seeds × 50 episodes** with Welch's t-test (t = −0.551, p = 0.588 — not significant at α=0.05; bands overlap)
+  - λ_1 × λ_2 sensitivity **5×5 grid × 3 seeds/cell**: over the LSTM env λ_2 is the active axis (4.18 → 0.98) while λ_1 (overload) is inert
+  - REINFORCE **learning-rate sensitivity sweep** (5 lrs × 3 seeds × 30 episodes); 1e-3 (peak +5.38) dominates the 3e-4 default (+4.52)
 - Raw arrays persisted in `results/comparison_seeded.json` and `results/lr_sweep.json` for reproducibility
 
 ### Changed
-- `docs/EXPERIMENTS.md` — E1/E4 verdicts rewritten on the new numbers; §2.1 LSTM val<train explanation updated for the converged regime; §3.1 retracts the "dead λ_1" claim as a single-seed artefact; new §3.2 documents the lr sensitivity sweep; §3 counterfactuals updated to reflect 10-seed budget
-- `docs/QUALITY.md` — Honest limitations section rewritten: the "3 seeds is statistically thin" bullet is replaced by an honest "10 seeds × 50 eps still p=0.180" note; the "LSTM 12 epochs" bullet is replaced by the converged-regime numbers; added an lr-sensitivity bullet documenting the deliberate decision not to retrain headlines at the better lr
+- `docs/EXPERIMENTS.md` — every entry rewritten for the integrated real-PHUL → LSTM → RL pipeline (E1 LSTM on real data; E2-E4 RL over the frozen LSTM; E9 λ_1 inert / λ_2 active over the LSTM env; E10 lr sweep over the LSTM env; §3 counterfactuals)
 
 ## [1.1.1] — 2026-05-31
 ### Added

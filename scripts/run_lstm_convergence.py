@@ -3,8 +3,8 @@
 The previous results/figures/lstm_loss.png stopped at 12 epochs, where
 both train and val MSE were still descending. Audit flagged it as
 "would benefit from more". This script trains the same LSTMWorldModel
-(hidden_size=64, lr=1e-3, window_len=7) on the same 28-day synthetic
-trainee (seed=42) and overwrites the chart so the convergence plateau
+(hidden_size=64, lr=1e-3, window_len=7) on the real PHUL program
+trajectory (seed=42) and overwrites the chart so the convergence plateau
 is visible.
 
 Epoch budget. The phase ticket asked for 100 epochs; empirically at
@@ -40,12 +40,11 @@ if str(REPO_ROOT) not in sys.path:
 from src.model.dataset import build_windows, split_train_val  # noqa: E402
 from src.model.lstm_trainer import LSTMTrainer  # noqa: E402
 from src.model.lstm_world import LSTMWorldModel  # noqa: E402
-from src.model.trajectory_builder import generate_trajectory  # noqa: E402
+from src.model.program_trajectory import generate_program_trajectory  # noqa: E402
 from src.model.types import LSTMTrainConfig, LSTMTrainHistory  # noqa: E402
 from src.utils.seeding import set_global_seed  # noqa: E402
 
 # Convergence-run knobs (kept in sync with config defaults for hidden_size/lr).
-NUM_DAYS: int = 28
 SEED: int = 42
 HIDDEN_SIZE: int = 64
 LR: float = 1e-3
@@ -54,14 +53,13 @@ EPOCHS: int = 2000
 BATCH_SIZE: int = 16
 VAL_DAYS: int = 7
 GRAD_CLIP: float = 1.0
-ACTION_POLICY: str = "uniform_random_masked"
 
 OUT_PNG: Path = REPO_ROOT / "results" / "figures" / "lstm_loss.png"
 
 
 def build_dataset() -> tuple[list, list]:
-    """Roll a 28-day trajectory, slice into 7-day windows, chronological split."""
-    trajectory = generate_trajectory(num_days=NUM_DAYS, seed=SEED, action_policy=ACTION_POLICY)
+    """Roll the real PHUL program trajectory, slice into 7-day windows, chronological split."""
+    trajectory = generate_program_trajectory(seed=SEED)
     windows = build_windows(trajectory, window_len=WINDOW_LEN)
     train, val = split_train_val(windows, val_days=VAL_DAYS)
     return train, val
@@ -118,7 +116,7 @@ def plot_loss_curves(history: LSTMTrainHistory, out_path: Path) -> None:
 
 def main() -> int:
     print(
-        f"LSTM convergence run: days={NUM_DAYS} seed={SEED} epochs={EPOCHS} "
+        f"LSTM convergence run (real PHUL trajectory): seed={SEED} epochs={EPOCHS} "
         f"hidden={HIDDEN_SIZE} lr={LR:g} window={WINDOW_LEN}"
     )
     train, val = build_dataset()
