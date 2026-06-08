@@ -59,11 +59,13 @@ def test_train_a2c_returns_handle_and_history() -> None:
     assert all(math.isfinite(r) for r in history.rewards)
 
 
-def test_train_world_model_raises_not_implemented() -> None:
-    """SDK.train_world_model is a documented stub — Phase 3 was lifted into a separate notebook flow per ADR-001."""
+def test_train_world_model_fits_real_phul_lstm() -> None:
+    """SDK.train_world_model fits + freezes the LSTM on the real PHUL trajectory (audit F-1)."""
     sdk = WorkoutSDK(seed=42)
-    with pytest.raises(NotImplementedError):
-        sdk.train_world_model()
+    handle = sdk.train_world_model()
+    assert handle.n_params > 0
+    assert handle.epochs_trained > 0
+    assert math.isfinite(handle.val_loss_final)
 
 
 # ---------------------------------------------------------------- compare

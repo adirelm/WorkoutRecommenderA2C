@@ -33,8 +33,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.env.workout_env import WorkoutEnv  # noqa: E402
 from src.model.policy_net import PolicyNet  # noqa: E402
+from src.model.world_model_builder import build_lstm_env, train_program_world_model  # noqa: E402
 from src.services.reinforce_trainer import REINFORCETrainer  # noqa: E402
 from src.services.types import REINFORCEConfig  # noqa: E402
 
@@ -47,9 +47,9 @@ OUT_PNG: Path = REPO_ROOT / "results" / "figures" / "reinforce_lr_sweep.png"
 OUT_JSON: Path = REPO_ROOT / "results" / "lr_sweep.json"
 
 
-def train_one(lr: float, seed: int) -> float:
-    """Train REINFORCE once with the given lr/seed; return mean of last WINDOW rewards."""
-    env = WorkoutEnv(seed=seed)
+def train_one(lr: float, seed: int, model) -> float:
+    """Train REINFORCE over the frozen LSTM env (real PHUL); mean of last WINDOW rewards."""
+    env = build_lstm_env(seed=seed, model=model)
     policy = PolicyNet(seed=seed)
     cfg = REINFORCEConfig(lr=float(lr), episodes=SHORT_EPISODES)
     history = REINFORCETrainer(policy, env, cfg, seed=seed).train(episodes=SHORT_EPISODES)
@@ -60,10 +60,11 @@ def train_one(lr: float, seed: int) -> float:
 def run_sweep() -> np.ndarray:
     """Iterate the LR_GRID × SEEDS grid; return matrix shape (len(LR_GRID), len(SEEDS))."""
     matrix = np.zeros((len(LR_GRID), len(SEEDS)), dtype=float)
+    model = train_program_world_model(seed=SEEDS[0])  # fixed env across the lr×seed grid
     for i, lr in enumerate(LR_GRID):
         for j, seed in enumerate(SEEDS):
             t0 = time.perf_counter()
-            tail_mean = train_one(lr, seed)
+            tail_mean = train_one(lr, seed, model)
             elapsed = time.perf_counter() - t0
             matrix[i, j] = tail_mean
             print(

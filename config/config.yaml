@@ -62,12 +62,16 @@ action_masking:
 
 dataset:
   kaggle_slug: "adnanelouardi/600k-fitness-exercise-and-workout-program-dataset"
-  primary_program: "PHUL"             # 12wk, 60min, 4 days/wk (workflow recommendation)
-  fallback_programs: ["GZCLP", "nSuns 5/3/1"]
+  summary_csv: "program_summary.csv"                       # full real Kaggle summary (2,598 programs)
+  detailed_csv: "programs_detailed_phul_subset.csv"        # §7.2.4 real PHUL rows (subset of 294MB boostcamp file)
+  primary_program: "Optimized PHUL (Power Hypertrophy Upper Lower)"  # real Kaggle title; Full Gym, 12wk, 90min, 4 days/wk
+  fallback_programs: ["PHUL 12 Week Program!", "PHUL Full Body"]      # real Kaggle titles passing §7.2.4
   program_filter_min_weeks: 8
   program_filter_equipment: "Full Gym"
   program_filter_min_minutes: 45
   program_filter_max_minutes: 120
+  program_cycle_days: 84              # 12 real PHUL weeks × 7 days (rest days inserted into gaps)
+  program_volume_scale: 0.05         # scales real Σ(sets·reps) volume into the env's reward regime
   license_acknowledgement: "ODbL 1.0 — Boostcamp.app — non-commercial use only — cited in submission"
 
 paths:

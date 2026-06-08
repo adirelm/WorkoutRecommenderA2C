@@ -9,7 +9,8 @@ from src.env.state import STATE_DIM, State
 from src.env.workout_env import WorkoutEnv
 from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
-from src.sdk.types import UNKNOWN_REWARD, PolicyHandle, WorkoutRecommendation
+from src.model.world_model_builder import build_lstm_env, train_program_world_model, world_model_history
+from src.sdk.types import UNKNOWN_REWARD, PolicyHandle, WorkoutRecommendation, WorldModelHandle
 from src.services.a2c_trainer import A2CTrainer
 from src.services.a2c_types import A2CConfig, A2CHistory
 from src.services.comparator import ComparisonResult, compare
@@ -28,6 +29,17 @@ def build_policy_handle(
         algorithm=str(algorithm),
         final_reward=final,
         episodes_trained=int(episodes_run),
+    )
+
+
+def build_world_model_handle(seed: int, epochs: int | None = None) -> WorldModelHandle:
+    """Train+freeze the LSTM world model on the real PHUL trajectory; report its stats."""
+    model = train_program_world_model(seed=seed, epochs=epochs)
+    hist = world_model_history(seed=seed, epochs=epochs)
+    return WorldModelHandle(
+        n_params=sum(int(p.numel()) for p in model.parameters()),
+        val_loss_final=float(hist.final_val_loss),
+        epochs_trained=int(hist.epochs_run),
     )
 
 
@@ -92,23 +104,33 @@ def recommend_from_net(
 
 
 def run_compare_sweep(
-    base_seed: int, seeds: int, episodes: int
+    base_seed: int, seeds: int, episodes: int, use_world_model: bool = True
 ) -> tuple[ComparisonResult, ActorCriticNet, PolicyHandle]:
-    """Run REINFORCE + A2C over N seeds x E episodes; return result + last A2C net/handle."""
+    """Run REINFORCE + A2C over N seeds x E episodes; return result + last A2C net/handle.
+
+    With ``use_world_model`` (default), both algorithms roll out against the frozen
+    LSTM world model trained on the real PHUL trajectory (brief §7.4/§7.5, audit F-1).
+    """
     r_hists: list[REINFORCEHistory] = []
     a_hists: list[A2CHistory] = []
     a2c_nets: list[ActorCriticNet] = []
     a2c_handles: list[PolicyHandle] = []
+    world_model = train_program_world_model(seed=int(base_seed)) if use_world_model else None
+    make_env = (
+        (lambda seed: build_lstm_env(seed=seed, model=world_model))
+        if use_world_model
+        else (lambda seed: WorkoutEnv(seed=seed))
+    )
     for s in range(int(seeds)):
         seed = int(base_seed) + s
-        env_r = WorkoutEnv(seed=seed)
+        env_r = make_env(seed)
         policy = PolicyNet(seed=seed)
         r_hists.append(
             REINFORCETrainer(policy, env_r, REINFORCEConfig(episodes=int(episodes)), seed=seed).train(
                 episodes=int(episodes)
             )
         )
-        env_a = WorkoutEnv(seed=seed)
+        env_a = make_env(seed)
         ac = ActorCriticNet(seed=seed)
         a_hist = A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
             episodes=int(episodes)

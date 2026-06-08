@@ -19,7 +19,13 @@ from src.env.state import ACTION_COUNT, ACTION_NAMES, STATE_DIM, State
 from src.env.workout_env import WorkoutEnv
 from src.model.actor_critic import ActorCriticNet
 from src.model.policy_net import PolicyNet
-from src.sdk.sdk_helpers import build_policy_handle, recommend_from_net, run_compare_sweep
+from src.model.world_model_builder import build_lstm_env
+from src.sdk.sdk_helpers import (
+    build_policy_handle,
+    build_world_model_handle,
+    recommend_from_net,
+    run_compare_sweep,
+)
 from src.sdk.types import (
     LogbookHandle,
     PolicyHandle,
@@ -32,7 +38,7 @@ from src.services.base_trainer import BaseTrainer
 from src.services.comparator import ComparisonResult
 from src.services.reinforce_trainer import REINFORCETrainer
 from src.services.types import REINFORCEHistory
-from src.utils.config_loader import get_version
+from src.utils.config_loader import get_version, load_config
 
 
 class WorkoutSDK:
@@ -44,8 +50,12 @@ class WorkoutSDK:
         "a2c": A2CTrainer,
     }
 
-    def __init__(self, seed: int = 42) -> None:
+    def __init__(self, seed: int = 42, use_world_model: bool = True) -> None:
         self.seed = int(seed)
+        # When True (default), training rolls out against the frozen LSTM world
+        # model fitted on the real PHUL trajectory (brief §7.4/§7.5, audit F-1);
+        # when False, the analytic SyntheticTrainee env is used (fast unit tests).
+        self.use_world_model = bool(use_world_model)
         # Touch the YAML loader so config.yaml is proven reachable from src/
         # (V3 §7.3 single source of truth — closes code-config-loaded gate).
         self.config_version: str = get_version()
@@ -54,18 +64,28 @@ class WorkoutSDK:
         self._last_net: PolicyNet | ActorCriticNet | None = None
 
     # ------------------------------------------------------------------ data
+    def _build_env(self) -> WorkoutEnv:
+        """Build the RL env: frozen-LSTM-backed (real PHUL) or analytic trainee."""
+        return build_lstm_env(seed=self.seed) if self.use_world_model else WorkoutEnv(seed=self.seed)
+
+    def _program_name(self) -> str:
+        """Program backing the env: the real chosen Kaggle title, or the analytic sentinel."""
+        if not self.use_world_model:
+            return "synthetic_trainee"
+        return str(load_config()["dataset"]["primary_program"])
+
     def prepare_data(self) -> LogbookHandle:
-        """Construct a WorkoutEnv and surface its config as a LogbookHandle."""
-        self._env = WorkoutEnv(seed=self.seed)
+        """Build the RL env and surface the chosen program as a LogbookHandle."""
+        self._env = self._build_env()
         return LogbookHandle(
-            program_name="synthetic_trainee",
+            program_name=self._program_name(),
             n_days=int(self._env.cfg.episode_length),
             state_dim=STATE_DIM,
         )
 
     def train_world_model(self) -> WorldModelHandle:
-        """Stub kept for CLI compatibility — full Phase-3 LSTM training is offline."""
-        raise NotImplementedError("train_world_model is exercised via Phase-3 scripts, not the SDK")
+        """Train + freeze the LSTM world model on the real PHUL trajectory (brief §7.3)."""
+        return build_world_model_handle(seed=self.seed)
 
     # ------------------------------------------------------------- trainers
     def train(self, algo: str, episodes: int = 10) -> tuple[PolicyHandle, REINFORCEHistory | A2CHistory]:
@@ -137,6 +157,5 @@ class WorkoutSDK:
         reaching into the previously-private ``_ensure_env``.
         """
         if self._env is None:
-            self.prepare_data()
-        assert self._env is not None
+            self._env = self._build_env()
         return self._env

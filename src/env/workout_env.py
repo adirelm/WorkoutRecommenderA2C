@@ -63,6 +63,7 @@ class WorkoutEnv:
         self._seed = int(seed)
         self._trainee: SyntheticTrainee = self._build_trainee()
         self._state: State = State.initial()
+        self._seed_trainee_history(self._state)
         self._step_count: int = 0
         self._history: list[int] = []
         self._mask: np.ndarray = self._mask_service.mask(self._state, self._history)
@@ -84,6 +85,7 @@ class WorkoutEnv:
             self._seed = int(seed)
         self._trainee = self._build_trainee()
         self._state = State.initial()
+        self._seed_trainee_history(self._state)
         self._step_count = 0
         self._history = []
         self._muscle_volume_14d = zero_share()
@@ -135,3 +137,14 @@ class WorkoutEnv:
         if self._injected_trainee is not None:
             return self._injected_trainee
         return SyntheticTrainee(rng=np.random.default_rng(self._seed))
+
+    def _seed_trainee_history(self, initial_state: State) -> None:
+        """Seed a history-carrying transition provider (e.g. LSTMEnvAdapter) per episode.
+
+        SyntheticTrainee is stateless and exposes no ``reset``; the LSTM adapter
+        (brief §7.3) needs its (state, action) window primed with the initial
+        state at the start of every episode, so we call ``reset`` when present.
+        """
+        reset = getattr(self._trainee, "reset", None)
+        if callable(reset):
+            reset(initial_state)

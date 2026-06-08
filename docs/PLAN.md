@@ -35,9 +35,9 @@ C4Container
       Container(nb,      "Analysis Notebook",                 "Jupyter · imports SDK",    "§7.7 §7.6 deliverables: loss curves, reward graphs, REINFORCE-vs-A2C, LaTeX derivations")
       Container(sdk,     "WorkoutSDK (sdk.py)",               "Python facade",            "SINGLE business-logic entry point — CLAUDE.md §3")
       Container(svc,     "Services",                          "training · evaluation · masking", "TrainerLSTM, TrainerREINFORCE, TrainerA2C, RolloutEvaluator, ActionMaskService")
-      Container(env,     "Environment",                       "LSTM-backed transition model", "WorkoutEnv: reset/step over synthetic trainee · uses LSTM as P(s'|s,a) · 7-action discrete space")
-      Container(model,   "Models",                            "torch.nn",                 "LSTMWorldModel · PolicyNet (REINFORCE) · ActorCriticNet (A2C)")
-      Container(data,    "Data layer",                        "pandas · CSV direct-read", "KaggleClient · Preprocessor · DailyAggregator (§7.2.4 synthetic trainee builder); parquet caching DEFERRED per PRD F2 — 28-day rollout reads CSV directly")
+      Container(env,     "Environment",                       "LSTM-backed transition model", "WorkoutEnv: reset/step; transition provider is the frozen LSTMEnvAdapter for RL (analytic trainee for fast tests) · 7-action discrete space")
+      Container(model,   "Models",                            "torch.nn",                 "LSTMWorldModel · world_model_builder (fit+freeze) · program_trajectory (real PHUL) · PolicyNet (REINFORCE) · ActorCriticNet (A2C)")
+      Container(data,    "Data layer",                        "pandas · CSV direct-read", "KaggleClient · program_loader (real PHUL select+clean) · Preprocessor · DailyAggregator (§7.2.4); parquet caching DEFERRED per PRD F2")
       ContainerDb(store, "Local artifacts",                   "filesystem",               "data/raw/*.csv · results/checkpoints · results/figures (no data/processed/*.parquet — F2 deferred)")
     }
 

@@ -6,10 +6,10 @@ then walks the resulting widget tree. Covers:
 * the "Load PHUL trainee" button renders on first paint,
 * clicking that button populates the ``gui.data.*`` session-state
   namespace (handle / trajectory / infos),
-* after load the ``metric_row`` exposes the pretty program name
-  ``'Synthetic Trainee'`` (from ``program_name='synthetic_trainee'``),
-  ``n_days=28``, and ``state_dim=12`` (the LogbookHandle contract from
-  :meth:`WorkoutSDK.prepare_data`),
+* after load the ``metric_row`` exposes the real chosen program name
+  ``'Optimized Phul (Power Hypertrophy Upper Lower)'`` (title-cased from the
+  real Kaggle ``program_name``), ``n_days=28``, and ``state_dim=12`` (the
+  LogbookHandle contract from :meth:`WorkoutSDK.prepare_data`),
 * the muscle-distribution heatmap appears as a ``plotly_chart`` element
   in the post-load element tree.
 """
@@ -77,7 +77,7 @@ def test_load_button_click_populates_session_state(loaded_app: AppTest) -> None:
         f"present data keys = {sorted(k for k in state_keys if k.startswith('gui.data.'))}"
     )
     handle = loaded_app.session_state["gui.data.handle"]
-    assert handle.program_name == "synthetic_trainee"
+    assert handle.program_name == "Optimized PHUL (Power Hypertrophy Upper Lower)"
     assert int(handle.n_days) == 28
     assert int(handle.state_dim) == 12
 
@@ -85,7 +85,7 @@ def test_load_button_click_populates_session_state(loaded_app: AppTest) -> None:
 def test_metric_row_surfaces_logbook_handle(loaded_app: AppTest) -> None:
     """After load, the KPI row mirrors the LogbookHandle fields."""
     metrics = _metric_dict(loaded_app)
-    assert metrics.get("Program") == "Synthetic Trainee"
+    assert metrics.get("Program") == "Optimized Phul (Power Hypertrophy Upper Lower)"
     assert metrics.get("Episode length (days)") == "28"
     assert metrics.get("State dim (channels)") == "12"
 

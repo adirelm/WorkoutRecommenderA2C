@@ -27,8 +27,9 @@ muscle-distribution variety, overload safety, and long-horizon balance.
 The submission ships three trainable components behind one Python facade
 (`TrainingSDK`):
 
-1. **LSTM transition model** — fits `p(s_{t+1} | s_t, a_t)` from a synthetic
-   logbook (brief §7.2). This is the "world model" the policies roll out against.
+1. **LSTM transition model** — fits `p(s_{t+1} | s_t, a_t)` from the real chosen
+   Kaggle program's day-level trajectory (brief §7.2). This frozen "world model"
+   is the environment the policies roll out against.
 2. **REINFORCE agent** (Williams 1992) — episodic Monte-Carlo policy gradient
    over the LSTM-rolled-out environment (brief §7.4).
 3. **A2C agent** (Mnih et al. 2016, synchronous variant) — actor + value
@@ -272,9 +273,13 @@ Each `F#` is traceable to brief §7.x. The trace matrix (`docs/TRACE.md`)
 carries 53 rows and 46 MUSTs.
 
 ### 3.1 Data
-- **F1** (brief §7.2). Generate a 28-day synthetic logbook of `(state, action,
-  next_state)` triples from a seeded stochastic trainee simulator built on
-  one selected Kaggle program (PHUL primary; GZCLP / nSuns 5/3/1 fallback).
+- **F1** (brief §7.2). Build the `(state, action, next_state)` trajectory from the
+  chosen **real Kaggle program** — `src/data/program_loader.py` selects *Optimized
+  PHUL (Power Hypertrophy Upper Lower)* from the committed real `program_summary.csv`
+  (§7.2.4 criteria), extracts its real exercise rows, infers muscle groups, applies the
+  data-quality contract, and `src/model/program_trajectory.py` rolls a deterministic
+  trainee along that real day-level schedule. (Earlier revisions used a free-floating
+  simulator; audit finding F-2 closed by wiring `src/data/*` end-to-end.)
 - **F2**. Persist the logbook as parquet under `data/synthetic/` with a seed
   manifest so any run is bit-reproducible from `seed → logbook → models`.
   **Status: DEFERRED — synthetic trainee is generated in-memory per run

@@ -58,22 +58,20 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 A critical grader could legitimately push back on the following:
 
 1. **REINFORCE-vs-A2C is statistically inconclusive even at 10 seeds.**
-   The headline comparison (EXPERIMENTS.md E4) now runs 10 seeds × 50
-   episodes (up from the original 3 × 30); Welch's two-sample t-test
-   on per-seed last-5-episode tail means yields **t = −1.395, p = 0.180
-   — not significant at α=0.05**. Bands overlap at the tail. The
-   "directional only" caveat survives the seed-budget upgrade.
-   Publication-grade rigor (30+ seeds × 500 episodes) is still open
-   work; on this 28-day toy env, neither algorithm convincingly
-   dominates within the explored budget.
-2. **LSTM headline run is 2000-epoch converged with best-val tracking,
-   but the dataset is tiny.** Final train MSE = 0.0000, final val
-   MSE = 3.3834, best val MSE = 1.9772 @ epoch 1106 (early-stop ledger;
-   see EXPERIMENTS.md E1 + §2.1). The 12-epoch caveat is retired, but
-   the val set is still only 7 windows from a 28-day synthetic trainee
-   — point estimates remain variance-dominated and the model overfits
-   the 15-window train split as expected on this scale. The physiology
-   disclaimer (LSTM fits *plan content*, not *biology*) is unchanged.
+   The headline comparison (EXPERIMENTS.md E4), with both agents rolling
+   out against the frozen real-PHUL LSTM env, runs 10 seeds × 50 episodes;
+   Welch's two-sample t-test on per-seed last-5-episode tail means yields
+   **t = −0.551, p = 0.588 — not significant at α=0.05** (REINFORCE
+   +5.303 ± 0.817, A2C +5.083 ± 0.873). Bands overlap at the tail.
+   Publication-grade rigor (30+ seeds × 500 episodes) is still open work;
+   on this env neither algorithm convincingly dominates.
+2. **LSTM headline run is 2000-epoch converged on the real PHUL trajectory,
+   but the dataset is small.** Final train MSE = 0.8993, final val
+   MSE = 2.0259, best val MSE ≈ 0.5725 @ epoch ~575 (early-stop ledger;
+   see EXPERIMENTS.md E1 + §2.1). The val set is only 7 windows from the
+   84-day program — point estimates remain variance-dominated. The
+   physiology disclaimer (LSTM fits real *plan content* — action sequence
+   + volumes — with *simulated* biology) is unchanged.
 3. **LSTM is a simplified Ha & Schmidhuber 2018** — see ADR-008.
 4. **REINFORCE baseline is scalar EMA, not learned V(s_t)** — both
    unbiased, V(s_t) has tighter variance reduction. Documented in
