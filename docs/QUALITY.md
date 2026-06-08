@@ -6,7 +6,7 @@ against ISO/IEC 25010 and the V3 deep audit flagged the omission.
 
 ## 1. Functional Suitability (completeness, correctness, appropriateness)
 - Brief §7 deliverables all present: see docs/TRACE.md
-- 431 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85 (91% actual)
+- 432 unit + integration tests pass; ≥85% branch coverage enforced by pyproject.toml fail_under=85 (91% actual)
 - Acceptance criteria documented per feature in docs/PRD.md
 
 ## 2. Performance Efficiency (time-behavior, resource-utilization, capacity)

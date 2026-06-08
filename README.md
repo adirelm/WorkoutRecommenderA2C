@@ -38,7 +38,7 @@ The full requirement → code → test traceability is in
 uv sync --dev
 uv run main.py                                # interactive CLI menu
 uv run jupyter lab notebooks/analysis.ipynb   # §7.7 chart deliverables + LaTeX
-uv run pytest tests/                          # 271 tests, ~98% coverage
+uv run pytest tests/                          # 432 tests, ~91% coverage
 ```
 
 For a one-shot non-interactive smoke check:
@@ -307,8 +307,8 @@ Current values (re-run any of these before submission):
 | Lint | `uv run ruff check src/ tests/ main.py` | clean (zero violations) |
 | Format | `uv run ruff format --check src/ tests/ main.py` | clean (CI-enforced) |
 | File-size cap | grep over `src/` for `.py` files | every file ≤ 150 LOC (CLAUDE.md §1) |
-| Tests | `uv run pytest tests/` | 271 / 271 passed |
-| Coverage | `uv run pytest tests/ --cov=src --cov-report=term-missing` | ~98% |
+| Tests | `uv run pytest tests/` | 432 passed |
+| Coverage | `uv run pytest tests/ --cov=src --cov-report=term-missing` | ~91% (gate ≥85%) |
 | TDD discipline | per CLAUDE.md §2 | RED → GREEN → REFACTOR commits visible in log |
 
 Phase-level integration tests (`test_phase{1..5}_integration.py`) gate each
