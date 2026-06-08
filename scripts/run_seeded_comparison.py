@@ -29,8 +29,8 @@ from _seeded_comparison_helpers import (
     run_sweep,
 )
 
-N_SEEDS: int = 10
-N_EPISODES: int = 50
+N_SEEDS: int = 30
+N_EPISODES: int = 200
 BASE_SEED: int = 42
 
 OUT_PNG: Path = REPO_ROOT / "results" / "figures" / "comparison.png"
@@ -38,16 +38,16 @@ OUT_JSON: Path = REPO_ROOT / "results" / "comparison_seeded.json"
 
 
 def main() -> int:
-    print(f"Seeded comparison: {N_SEEDS} seeds × {N_EPISODES} episodes × 2 algos")
+    print(f"Seeded comparison: {N_SEEDS} seeds × {N_EPISODES} episodes × (REINFORCE, A2C, random)")
     t0 = time.perf_counter()
-    r_stack, a_stack = run_sweep(N_SEEDS, N_EPISODES, BASE_SEED)
+    r_stack, a_stack, rnd_stack = run_sweep(N_SEEDS, N_EPISODES, BASE_SEED)
     elapsed = time.perf_counter() - t0
     print(f"\nsweep complete in {elapsed:.1f}s ({elapsed / 60:.1f} min)")
-    plot_bands(r_stack, a_stack, OUT_PNG, N_SEEDS, N_EPISODES)
-    dump_json(r_stack, a_stack, OUT_JSON, N_SEEDS, N_EPISODES, BASE_SEED)
+    plot_bands(r_stack, a_stack, rnd_stack, OUT_PNG, N_SEEDS, N_EPISODES)
+    dump_json(r_stack, a_stack, rnd_stack, OUT_JSON, N_SEEDS, N_EPISODES, BASE_SEED)
     print(f"wrote chart → {OUT_PNG.relative_to(REPO_ROOT)}")
     print(f"wrote json  → {OUT_JSON.relative_to(REPO_ROOT)}")
-    report_significance(r_stack, a_stack)
+    report_significance(r_stack, a_stack, rnd_stack)
     return 0
 
 
