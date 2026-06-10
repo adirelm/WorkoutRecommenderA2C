@@ -124,17 +124,13 @@ def run_compare_sweep(
     for s in range(int(seeds)):
         seed = int(base_seed) + s
         env_r = make_env(seed)
-        policy = PolicyNet(seed=seed)
-        r_hists.append(
-            REINFORCETrainer(policy, env_r, REINFORCEConfig(episodes=int(episodes)), seed=seed).train(
-                episodes=int(episodes)
-            )
-        )
+        r_cfg = REINFORCEConfig.from_yaml(episodes=int(episodes))
+        policy = PolicyNet(hidden=r_cfg.policy_hidden, seed=seed)
+        r_hists.append(REINFORCETrainer(policy, env_r, r_cfg, seed=seed).train(episodes=int(episodes)))
         env_a = make_env(seed)
-        ac = ActorCriticNet(seed=seed)
-        a_hist = A2CTrainer(ac, env_a, A2CConfig(episodes=int(episodes)), seed=seed).train(
-            episodes=int(episodes)
-        )
+        a_cfg = A2CConfig.from_yaml(episodes=int(episodes))
+        ac = ActorCriticNet(actor_hidden=a_cfg.actor_hidden, critic_hidden=a_cfg.critic_hidden, seed=seed)
+        a_hist = A2CTrainer(ac, env_a, a_cfg, seed=seed).train(episodes=int(episodes))
         a_hists.append(a_hist)
         a2c_nets.append(ac)
         a2c_handles.append(build_policy_handle("A2C", a_hist.rewards, a_hist.episodes_run))

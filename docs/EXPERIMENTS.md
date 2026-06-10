@@ -31,7 +31,7 @@ The **chronological split itself is methodologically correct** (train = earlier 
 
 - **Publication-grade seed/episode budget**: E4 now uses **30 seeds × 200 episodes** (12× the earlier 10×50) and Welch's t (p = 0.652, not significant). Even at this budget A2C and REINFORCE are indistinguishable — going to 500 episodes is unlikely to change the conclusion on this toy env.
 - **Full 600K-row detailed file**: the pipeline runs on the committed real `program_summary.csv` (2,598 programs) + the real PHUL exercise subset; the full 294 MB `programs_detailed_boostcamp_kaggle.csv` is fetched on demand (kept git-ignored), not committed.
-- **Random baseline (now included, E4)**: a uniform-random *masked* policy anchors the floor — and reveals that neither RL method beats it on this env (the action mask + flat shaped reward make masked-random near-optimal). A *heuristic* (e.g. rotate-chains PPL) baseline is still untested.
+- **Random baseline (now included, E4)**: a uniform-random *masked* policy anchors the floor — and reveals that neither RL method beats it on this env (the action mask + flat shaped reward make masked-random near-optimal). A *heuristic* (rotate-chains PPL) baseline is implemented (`src/model/trajectory_builder.py::_rotate_chains_action`) but **deliberately deferred as an evaluation series**: with masked-random already at the reward ceiling (E4: 5.853 ± 0.488, above both RL policies), a deterministic in-mask heuristic cannot add discriminative information — it would land in the same flat-reward band and tell us nothing the random floor has not.
 
 ## §3.1 E9 — λ_1 × λ_2 sensitivity (V3 §9.1, expanded to 5×5 × 3 seeds)
 

@@ -63,7 +63,7 @@ def build_reward_config(defaults: dict, lambda_1: float, lambda_2: float) -> Rew
         lambda_2=float(lambda_2),
         w_progress=float(defaults.get("w_progress", 0.7)),
         w_variety=float(defaults.get("w_variety", 0.3)),
-        overload_threshold_mult=float(defaults.get("overload_threshold_multiplier", 1.2)),
+        overload_threshold_multiplier=float(defaults.get("overload_threshold_multiplier", 1.2)),
         overload_exponent=float(defaults.get("overload_exponent", 1.5)),
     )
 

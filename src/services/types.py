@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.utils.config_loader import load_config
+
 
 @dataclass(frozen=True)
 class REINFORCEConfig:
@@ -16,6 +18,20 @@ class REINFORCEConfig:
     baseline_alpha: float = 0.05
     entropy_coef: float = 0.0
     grad_clip_norm: float = 1.0
+
+    @classmethod
+    def from_yaml(cls, episodes: int | None = None) -> REINFORCEConfig:
+        """Build from config.yaml [reinforce] — the runtime source of truth (V3 §7.2)."""
+        c = load_config()["reinforce"]
+        return cls(
+            policy_hidden=int(c["policy_hidden"]),
+            lr=float(c["lr"]),
+            gamma=float(c["gamma"]),
+            episodes=int(episodes if episodes is not None else c["episodes"]),
+            baseline_alpha=float(c["baseline_alpha"]),
+            entropy_coef=float(c["entropy_coef"]),
+            grad_clip_norm=float(c["grad_clip_norm"]),
+        )
 
 
 @dataclass(frozen=True)

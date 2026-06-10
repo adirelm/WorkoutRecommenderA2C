@@ -1,6 +1,6 @@
 [project]
 name = "workoutrl"
-version = "1.1.1"
+version = "1.2.0"
 description = "Bar-Ilan Vibe-Coding Workshop Assignment 3 — LSTM transition model + REINFORCE + A2C on a synthetic workout trainee"
 readme = "README.md"
 license = {text = "MIT"}

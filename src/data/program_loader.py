@@ -56,9 +56,24 @@ def load_chosen_program(config: dict | None = None) -> tuple[str, pd.DataFrame]:
     )
 
     rows = detailed.loc[detailed["title"] == name].copy()
-    cleaned, _report = apply_data_quality_contract(
+    cleaned, report = apply_data_quality_contract(
         rows, seconds_per_rep=float(cfg["data_quality"]["seconds_per_rep"])
     )
     cleaned["muscle_group"] = cleaned["exercise_name"].map(normalise_muscle_group)
     cleaned["reps"] = cleaned["reps_equivalent"]
+    _write_quality_report(name, report, Path(cfg["paths"]["results"]))
     return name, cleaned
+
+
+def _write_quality_report(name: str, report, results_dir: Path) -> None:
+    """Persist the §7.2.3 data-quality audit trail (PRD F3a / TODO T-MF3)."""
+    results_dir.mkdir(parents=True, exist_ok=True)
+    (results_dir / "data_quality_report.txt").write_text(
+        f"Data quality report — chosen program: {name}\n"
+        f"rows_in: {report.rows_in}\n"
+        f"rows_out: {report.rows_out}\n"
+        f"negative_volume_dropped (rule a): {report.negative_volume_dropped}\n"
+        f"time_encoded_reps_reclassified (rule b): {report.time_encoded_reps_reclassified}\n"
+        f"rest_days_inserted (rule c, by aggregator): see trajectory builder\n",
+        encoding="utf-8",
+    )

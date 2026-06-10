@@ -1,0 +1,6 @@
+Data quality report — chosen program: Optimized PHUL (Power Hypertrophy Upper Lower)
+rows_in: 312
+rows_out: 312
+negative_volume_dropped (rule a): 0
+time_encoded_reps_reclassified (rule b): 26
+rest_days_inserted (rule c, by aggregator): see trajectory builder

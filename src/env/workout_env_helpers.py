@@ -1,11 +1,30 @@
 """Pure helpers for WorkoutEnv — extracted to keep workout_env.py ≤150 raw lines.
 
 Holds the (volume, muscle-group) action table, the group→share-key projection,
-and stateless reducers for the 14-day muscle-volume share dict. No class state,
-no imports from workout_env.py — strictly one-way dependency.
+stateless reducers for the 14-day muscle-volume share dict, and the yaml→
+RewardConfig loader. No class state, no imports from workout_env.py — strictly
+one-way dependency.
 """
 
 from __future__ import annotations
+
+from src.env.reward import RewardConfig
+from src.utils.config_loader import load_config
+
+
+def reward_config_from_yaml() -> RewardConfig:
+    """Build RewardConfig from config.yaml [rewards] (CLAUDE.md §4 — yaml is source of truth)."""
+    r = load_config()["rewards"]
+    return RewardConfig(
+        lambda_1=float(r["lambda_1"]),
+        lambda_2=float(r["lambda_2"]),
+        w_progress=float(r["w_progress"]),
+        w_variety=float(r["w_variety"]),
+        overload_threshold_multiplier=float(r["overload_threshold_multiplier"]),
+        overload_exponent=float(r["overload_exponent"]),
+        progress_clip_ceiling=float(r["progress_clip_ceiling"]),
+    )
+
 
 # Per-action (prescribed volume, dominant muscle bucket) for share tracking.
 _ACTIONS: tuple[tuple[float, str], ...] = (

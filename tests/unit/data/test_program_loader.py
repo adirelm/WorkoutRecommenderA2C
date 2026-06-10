@@ -7,6 +7,8 @@ rather than tested in isolation (closes audit finding F-2).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 
 from src.data.program_loader import load_chosen_program
@@ -37,3 +39,11 @@ def test_loader_only_returns_chosen_program_rows() -> None:
     """Filtering keeps only the chosen program's exercise rows."""
     name, cleaned = load_chosen_program()
     assert (cleaned["title"] == name).all()
+
+
+def test_loader_persists_data_quality_report() -> None:
+    """§7.2.3 audit trail: results/data_quality_report.txt written with rule counts."""
+    load_chosen_program()
+    text = Path("results/data_quality_report.txt").read_text(encoding="utf-8")
+    assert "rows_in: 312" in text
+    assert "time_encoded_reps_reclassified (rule b): 26" in text

@@ -44,7 +44,7 @@ class RewardConfig:
     lambda_2: float = 1.0  # imbalance weight
     w_progress: float = 0.7  # within-gain progress weight
     w_variety: float = 0.3  # within-gain variety weight
-    overload_threshold_mult: float = 1.2
+    overload_threshold_multiplier: float = 1.2  # matches config.yaml rewards key name
     overload_exponent: float = 1.5
     progress_clip_ceiling: float = 1.2  # max single-step progress delta
 
@@ -135,7 +135,7 @@ class RewardFunction:
         cfg = self.config
         if baseline <= 0:
             return 0.0
-        threshold = cfg.overload_threshold_mult * baseline
+        threshold = cfg.overload_threshold_multiplier * baseline
         excess = rolling_7d - threshold
         if excess <= 0:
             return 0.0

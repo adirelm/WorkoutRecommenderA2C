@@ -1,14 +1,13 @@
 # WorkoutRecommenderA2C configuration
 # All algorithm-relevant parameters live here; never hardcoded in src/.
 
-version: "1.1.1"
+version: "1.2.0"
 seed: 42
 
 environment:
   episode_length: 28        # days per episode (brief §7.4)
-  state_dim: 12              # C2_moderate_12d (ADR-002)
-  action_count: 7            # ADR-001 / ADR-004
-  warmup_days: 7             # rolling-window warmup before policy decisions
+  state_dim: 12              # C2_moderate_12d (ADR-002) — asserted == STATE_DIM by test_config_consumption
+  action_count: 7            # ADR-001 / ADR-004 — asserted == ACTION_COUNT by test_config_consumption
 
 rewards:
   lambda_1: 2.0              # overload weight (ADR-003)
@@ -17,8 +16,9 @@ rewards:
   w_variety: 0.3             # within-gain weight (ADR-003)
   overload_threshold_multiplier: 1.2     # vs user_baseline_7d_volume
   overload_exponent: 1.5     # superlinear penalty (ADR-003)
-  imbalance_basis_days: 14
-  baseline_window_days: 28
+  progress_clip_ceiling: 1.2 # max single-step progress delta
+  imbalance_basis_days: 14   # documented: 14d muscle-share window tracked in workout_env
+  baseline_window_days: 28   # documented: fixed by eq.15 contract (see RewardConfig docstring)
 
 data_quality:
   seconds_per_rep: 3.0        # time-encoded-reps conversion (PRD §1.5.0)
@@ -35,6 +35,7 @@ lstm:
   batch_size: 16
   val_split_days: 7
   action_embed_dim: 8        # action-id embedding width fed alongside state
+  grad_clip_norm: 1.0        # gradient-norm clip for the supervised LSTM fit
 
 reinforce:
   policy_hidden: 128         # TR5: 1-layer FC, 128 (brief lecture hint)

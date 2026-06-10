@@ -181,6 +181,22 @@ The brief's framing: the critic is "wrong by $\delta_t$"; minimising the MSE dri
 
 ---
 
+## §7.2.4 Daily volume aggregation (eq. 13)
+
+$$ \text{total\_volume}_t = \sum_i \left( \text{sets}_i \cdot \text{reps}_i \right) $$
+
+Each training day $t$ of the chosen program collapses its exercise rows into one
+scalar volume (with $\text{reps}_i$ already time-converted per the §7.2.3 data-quality
+contract), plus a normalised per-muscle-group share, session duration, and
+week/day-in-cycle indices; missing (week, day) slots become zero-volume Rest days.
+
+**How this maps to `src/`.** `src/data/aggregator.py::daily_aggregate` implements the
+sum (`_row_volume`, line 31) and the muscle distribution; `insert_rest_days` fills the
+cycle gaps; `src/model/program_trajectory.py` maps each aggregated day to an env action
+and prescribed volume — the bridge from the real Kaggle rows to the LSTM trajectory.
+
+---
+
 ## §7.3 LSTM World Model (eq. 14)
 
 The workout-trainee state is partially observable: yesterday's fatigue and soreness depend on history $h_t = (s_0, a_0, \ldots, s_{t-1}, a_{t-1})$, not solely on $s_{t-1}$. This is the POMDP framing of brief §1.4. To recover a Markovian transition we learn a recurrent **world model** [7] that maps history to a sufficient statistic:

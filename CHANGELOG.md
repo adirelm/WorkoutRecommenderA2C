@@ -2,7 +2,30 @@
 
 All notable changes to this project. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.2.0] — 2026-06-10
+
+Phases 11–15: real-Kaggle + LSTM→RL integration, audit closures, baseline study,
+and the consistency/release pass. Tagged `v1.2.0`.
+
+### Added — Phase 15 (consistency + grade-max pass, 62-agent audit)
+- **config.yaml is now the runtime source of truth (CL4/V3 §7.2):**
+  `REINFORCEConfig.from_yaml` / `A2CConfig.from_yaml`, RewardConfig/EnvConfig
+  loaded from yaml in `WorkoutEnv`, LSTM device + `grad_clip_norm` from yaml;
+  key rename `overload_threshold_mult` → `overload_threshold_multiplier`;
+  drift guarded by `tests/unit/utils/test_config_consumption.py` (7 tests).
+- `results/data_quality_report.txt` emitted by `program_loader` (§7.2.3 audit
+  trail: 312 rows, 26 time-encoded reclassified) + test.
+- Notebook: λ-sensitivity cell corrected to the real post-Phase-11 numbers
+  (λ₂ active 4.18→0.98, λ₁ inert) — the prior cell carried stale analytic-trainee
+  numbers; added the brief §7.6.1 REINFORCE-vs-A2C comparison TABLE generated
+  from `comparison_seeded.json`; full re-execution (source/executed in sync,
+  zero absolute paths).
+- `docs/adr/ADR-009-richer-data-extension.md` (formal richer-data design);
+  eq. 13 transcribed in THEORY §7.2.4; rotate-chains baseline deferral rationale.
+- TRACE.md Phase-11→15 freshness sweep (real-data rows D2/D3/D5, planned→as-built
+  test map, CL7 deviation note, known-gaps closure); SUBMISSION.md + COST_ANALYSIS
+  refreshed (Phases 10-15 spend rows, ~$254 all-in); dead GUI modules removed
+  (`explanations.py`, `page_metadata.py`).
 
 ### Fixed — real-data + LSTM→RL integration (audit findings F-1, F-2)
 - **F-1 (LSTM→RL wiring).** REINFORCE and A2C now roll out against the **frozen LSTM
