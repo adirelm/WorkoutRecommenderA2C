@@ -209,16 +209,22 @@ at time of writing.
 | Phase 6-7 (SDK + notebook) | Claude Opus 4.7 | ~800k | ~200k | $15 | $75 | $27.00 |
 | Phase 8 (submission prep + edge audits) | Claude Opus 4.7 | ~600k | ~150k | $15 | $75 | $20.25 |
 | Phase 9 (Streamlit GUI 5×10 agents) | Claude Sonnet 4.5 (subagents) | ~2M | ~500k | $3 | $15 | $13.50 |
-| V3 deep audit (86 agents) | Mixed (Opus orchestration + Sonnet workers) | ~2.5M | ~600k | $5 | $25 | $27.50 |
-| **Total** | — | ~7.7M | ~1.95M | — | — | **~$153** |
+| Phase 10 (V3 deep audit, ~86 agents) | Mixed (Opus orchestration + Sonnet workers) | ~2.5M | ~600k | $5 | $25 | $27.50 |
+| Phase 11 (real-Kaggle + LSTM→RL integration, F-1/F-2) | Claude Opus 4.8 (direct) | ~700k | ~180k | $15 | $75 | $24.00 |
+| Phase 12 (66-agent audit + fixes + 10-agent verify) | Mixed (Opus orchestration + workers) | ~3.2M | ~750k | $5 | $25 | $34.75 |
+| Phase 13-14 (30×200 baseline study + doc-count fixes) | Claude Opus 4.8 (direct) | ~400k | ~100k | $15 | $75 | $13.50 |
+| Phase 15 (62-agent consistency audit + fixes) | Mixed (Opus orchestration + workers) | ~2.6M | ~650k | $5 | $25 | $29.25 |
+| **Total** | — | ~14.6M | ~3.6M | — | — | **~$254** |
 
 Two reconciliation notes:
 
-1. The per-model breakdown total (~$153) is **higher** than the
-   per-phase §2 total (~$61) because §2 was written before the V3
-   deep audit and reflects only the build-phase spend through Phase
-   9 wave 5. The per-model table is the up-to-date, all-in figure
-   including post-submission audit passes. §2 is preserved as a
+1. The per-model breakdown total (~$254) is **higher** than the
+   per-phase §2 total (~$61) because §2 was written before the audit
+   and integration phases and reflects only the build-phase spend
+   through Phase 9 wave 5. The per-model table is the up-to-date,
+   all-in figure including Phases 10-15 (V3 audit, real-data + LSTM→RL
+   integration, 66- and 62-agent audit passes, the 30×200 baseline
+   study, and the final verifications). §2 is preserved as a
    historical snapshot — both numbers are correct for what they
    measure.
 2. The model column reflects the *dominant* model for the phase, not

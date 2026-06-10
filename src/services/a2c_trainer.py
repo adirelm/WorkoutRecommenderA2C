@@ -43,9 +43,9 @@ class A2CTrainer(BaseTrainer):
     # ----------------------------------------------------------- registry hook
     @classmethod
     def build(cls, env: WorkoutEnv, seed: int, episodes: int) -> A2CTrainer:
-        """SDK-facing factory (V3 §12): builds ActorCriticNet + A2CConfig + trainer."""
-        ac = ActorCriticNet(seed=seed)
-        cfg = A2CConfig(episodes=int(episodes))
+        """SDK-facing factory (V3 §12): wires ActorCriticNet + config from config.yaml [a2c]."""
+        cfg = A2CConfig.from_yaml(episodes=int(episodes))
+        ac = ActorCriticNet(actor_hidden=cfg.actor_hidden, critic_hidden=cfg.critic_hidden, seed=seed)
         return cls(ac_net=ac, env=env, config=cfg, seed=seed)
 
     @property

@@ -52,10 +52,10 @@ is cut.
 | 3.3 (inferred) | Brief §3 | קו בסיס b(s) לא תלוי ב-a → לא מטה את הגרדיאנט (control variate). | docs/THEORY.md §3.3 (proof) + tests | test_baseline_unbiased_gradient | MUST |
 | 3.4 (inferred) | Brief §3 | Bias-Variance Trade-off: כאן צמצום שונות ללא הטיה. | docs/THEORY.md §3.4 (variance_comparison.png deferred — not generated) | test_variance_reduction_empirical | SHOULD |
 | D1 | Brief §7.2 | Kaggle dataset adnanelouardi/600k-fitness-exercise-and-workout-program-dataset; ODbL 1.0 license; cite in submission | docs/PRD.md §1.3 + docs/adr/ADR-002 + README §References | test_dataset_slug_in_config | MUST |
-| D2 | Brief §7.2 | Download procedure: kaggle CLI + cached CSVs under data/raw/ (instructions/-only; not in repo). Parquet caching DEFERRED per PRD F2 — 28-day rollout reads CSV directly. | src/data/kaggle_client.py + docs/PRD.md §3.1 F1 | test_kaggle_client_ensures_csvs_present | MUST |
-| D3 | Brief §7.2 | Two CSV schemas: program_summary.csv (2598 rows) + fitness_exercises.csv (605k rows) joinable on 'title' | src/data/preprocessor.py | test_csv_schema_columns_present | MUST |
+| D2 | Brief §7.2 | Download procedure: kaggle CLI + cached CSVs under data/raw/. The REAL program_summary.csv + the chosen program's exercise subset are COMMITTED (Phase 11) so the pipeline reproduces without credentials; the full 294MB detailed file is fetched on demand (git-ignored). Parquet caching DEFERRED per PRD F2. | src/data/kaggle_client.py + src/data/program_loader.py + docs/PRD.md §3.1 F1 | tests/unit/data/test_kaggle_client.py + tests/unit/data/test_program_loader.py | MUST |
+| D3 | Brief §7.2 | Two CSV schemas: program_summary.csv (2,598 program records) + programs_detailed_boostcamp_kaggle.csv (605k exercise rows) joinable on 'title'; chosen-program subset committed as programs_detailed_phul_subset.csv (312 rows of *Optimized PHUL*) | src/data/program_loader.py + src/data/preprocessor.py | tests/unit/data/test_program_loader.py (runs on the real committed CSVs) | MUST |
 | D4 | Brief §7.2.3 | Negative reps/sets caveat: NOT corruption — encodes seconds for timed exercises; convert via seconds_per_rep=3.0 (config) | src/data/preprocessor.py (apply_data_quality_contract) + config/config.yaml data_quality | test_negative_sets_reps_treated_as_seconds | MUST |
-| D5 | Brief §7.2.4 (eq. 13) | Single-trainee trajectory builder: filter chosen_program (≥8wk, Full Gym, 45-120min); daily aggregation total_volume_t = Σ(sets·reps); REST DAY insertion; trajectory (s_1..s_T) | src/data/aggregator.py | test_daily_aggregation_eq13 + test_rest_day_inserted | MUST |
+| D5 | Brief §7.2.4 (eq. 13) | Single-trainee trajectory builder: filter chosen_program (≥8wk, Full Gym, 45-120min); daily aggregation total_volume_t = Σ(sets·reps); REST DAY insertion; trajectory (s_1..s_T) — wired end-to-end from the REAL committed Kaggle rows (Phase 11) | src/data/aggregator.py + src/model/program_trajectory.py | tests/unit/data/test_aggregator.py + tests/unit/model/test_program_trajectory.py | MUST |
 | D6 | Brief §7.7 | Submission cites dataset URL + key files + license + chosen program (PHUL primary) | README §Dataset + docs/PRD.md §10 | test_readme_cites_dataset_url | MUST |
 | DA1 | Brief §7.1.2 Part A | Formal written MDP definition (state/action/reward/transition) + pipeline pseudocode | docs/THEORY.md §1.1-1.4 + docs/PRD.md §1.5-1.7 | test_part_a_mdp_writeup_present | MUST |
 | DA2 | Brief §7.3.1 Part C | LSTM loss curves (train + val) + temporal-pattern discussion | results/figures/lstm_loss.png + notebooks/analysis.ipynb cell 3 | test_lstm_loss_chart_exists | MUST |
@@ -209,3 +209,46 @@ Full sweep of every `docs/[A-Z]*\.md` reference in this matrix against `test -f`
 - Row A1A5: planning-time path `ARCHITECTURE.md` → as-built `docs/PLAN.md` §3 (C4 mermaid) + `docs/adr/ADR-001-hybrid-architecture.md` + README §Architecture — no standalone architecture doc; the layer diagram is in PLAN.md and the architectural decision in ADR-001.
 - Row A1A6: planning-time path `RUBRIC_SELFCHECK.md` → as-built `docs/SUBMISSION.md` + `docs/QUALITY.md` (ISO/IEC 25010 mapping) — no standalone rubric-self-check doc; per-rubric evidence lives in SUBMISSION.md and the quality-characteristic mapping in QUALITY.md.
 - Row A1R3: planning-time path `SECURITY.md` → as-built `docs/QUALITY.md` §6 (Security) + `.env-example` — no standalone security doc; the secrets-discipline contract is documented as `QUALITY.md §6 Security (confidentiality, integrity, authenticity, non-repudiation, accountability)` per ISO/IEC 25010:2011.
+
+## Phase-11→15 freshness sweep (2026-06-10) — real-data + LSTM→RL integration
+
+Commits 5a7b7de (P11), b0f31d4 (P12), 18404a0 (P13), 8524ce8 (P14), Phase-15
+consistency pass. The audit findings F-1/F-2 rewired the data→model→RL chain;
+rows updated in place: D2, D3, D5 (real committed Kaggle CSVs + program_loader
++ program_trajectory). Additional bindings established by the integration:
+
+- **TR3/TR4 now bound at runtime, not just in tests**: `src/model/world_model_builder.py`
+  fits+freezes the LSTM on the real-PHUL trajectory and injects `LSTMEnvAdapter`
+  as the `WorkoutEnv` transition provider; `WorkoutSDK(use_world_model=True)` is
+  the default. Enforced by `tests/unit/model/test_world_model_builder.py`.
+- **D4 audit trail**: the data-quality contract now persists
+  `results/data_quality_report.txt` (312 rows in, 26 time-encoded reclassified);
+  asserted by `tests/unit/data/test_program_loader.py::test_loader_persists_data_quality_report`.
+- **CL4 strengthened (Phase 15)**: config.yaml is now the *runtime* source of
+  truth — `RewardConfig`/`EnvConfig`/`REINFORCEConfig.from_yaml`/`A2CConfig.from_yaml`/
+  action-mask thresholds/LSTM device+grad-clip all load from yaml; enforced by
+  `tests/unit/utils/test_config_consumption.py` (drift fails the suite both ways).
+- **DA4 upgraded (Phase 13)**: comparison is now 30 seeds × 200 episodes with a
+  masked-random baseline (3 series in `results/comparison_seeded.json`); the
+  §7.6.1 comparison TABLE is rendered in `notebooks/analysis.ipynb` from the json.
+
+**Planned→as-built test-id map** (planning names in the matrix vs the real suite;
+all MUST behaviors are covered — names drifted during phase builds):
+rows 1.1-1.4 → `tests/unit/model/test_policy_net.py` / `test_lstm_world.py`,
+`tests/unit/services/test_reinforce_helpers.py`, `tests/unit/env/test_state.py`;
+rows 2.x/3.x → `tests/unit/services/test_reinforce_*.py` + `test_baseline.py`;
+D4 → `tests/unit/data/test_preprocessor.py` (time-encoded rules); D6/DA1-DA5 →
+artifact-verified on disk (README §Dataset, THEORY/PRD write-ups, the six
+`results/figures/*.png` regenerated Phase 11+) — chart-existence is additionally
+exercised by the GUI page tests that load them; CL1-CL7 →
+`scripts/check_file_sizes.py` + CI ruff/coverage gates +
+`tests/unit/services/` inheritance tests + `tests/unit/utils/test_config_consumption.py`
++ `tests/integration/test_commits_reference_sections.py`.
+**CL7 deviation note**: A3 lives in its own repository (`WorkoutRecommenderA2C`,
+branch `main`) rather than an `assignment-3` branch of the A1 repo — per-assignment
+repos match the lecturer's submission practice (rows R1/R2); version is 1.2.0
+(matching CL7's "version 1.2.x" expectation as of the Phase-15 release).
+**Known-gaps closure**: the §4-§7 ingest gap is closed (rows DA*/Q*/AM* bound the
+full brief); the evaluation-protocol gap is closed by the chronological 71/7-window
+LSTM split + the 30×200 multi-seed protocol; the "single-seed vs multi-seed"
+question is settled (multi-seed mean ± std with Welch t, per §7.6).

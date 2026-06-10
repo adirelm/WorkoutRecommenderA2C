@@ -24,6 +24,7 @@ The full requirement → code → test traceability is in
 |---|---|---|---|
 | §7.1 State (12-d vector) | `src/env/state.py` | `tests/unit/env/test_state.py` | — |
 | §7.2 Dataset (PHUL filter) | `src/data/program_filter.py` | `tests/unit/data/test_program_filter.py` | — |
+| §7.2.4 Trajectory (eq. 13) | `src/data/program_loader.py`, `src/model/program_trajectory.py` | `tests/unit/model/test_program_trajectory.py` | `results/data_quality_report.txt` |
 | §7.3 LSTM world model | `src/model/lstm_world.py` | `tests/unit/model/test_lstm_world.py` | `results/figures/lstm_loss.png` |
 | §7.4 REINFORCE | `src/services/reinforce_trainer.py` | `tests/unit/services/test_reinforce_trainer.py` | `results/figures/reinforce_rewards.png` |
 | §7.5 A2C | `src/services/a2c_trainer.py` | `tests/unit/services/test_a2c_trainer.py` | `results/figures/a2c_training.png` |
@@ -397,8 +398,9 @@ derivative academic work:
 3. Commit subjects must match the allowed-prefix regex enforced in
    `tests/test_commits_reference_sections.py` (e.g. `Phase N fix —`, `PII scrub —`,
    `Phase N completion`, `Phase N gate-fix`).
-4. Every commit carries the `Co-Authored-By: Claude Opus 4.7` trailer per the
-   §1.4 Architect / Implementer contract above.
+4. Every commit carries a `Co-Authored-By: Claude …` trailer (Opus 4.7 for the
+   build phases, Opus 4.8 for Phases 11+) per the §1.4 Architect / Implementer
+   contract above.
 
 ---
 

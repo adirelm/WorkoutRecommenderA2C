@@ -53,9 +53,11 @@ def _fit_world_model(seed: int, epochs: int | None) -> tuple[LSTMWorldModel, LST
         window_len=window,
         batch_size=int(lc["batch_size"]),
         val_split_days=int(lc["val_split_days"]),
+        grad_clip_norm=float(lc["grad_clip_norm"]),
         action_embed_dim=int(lc["action_embed_dim"]),
     )
-    history = LSTMTrainer(model=model, config=train_cfg, device="cpu", seed=seed).fit(train, val)
+    device = str(cfg["device"]["default"])
+    history = LSTMTrainer(model=model, config=train_cfg, device=device, seed=seed).fit(train, val)
     model.freeze()
     return model, history
 

@@ -62,9 +62,9 @@ class REINFORCETrainer(BaseTrainer):
     # ----------------------------------------------------------- registry hook
     @classmethod
     def build(cls, env: WorkoutEnv, seed: int, episodes: int) -> REINFORCETrainer:
-        """SDK-facing factory (V3 §12): builds PolicyNet + REINFORCEConfig + trainer."""
-        policy = PolicyNet(seed=seed)
-        cfg = REINFORCEConfig(episodes=int(episodes))
+        """SDK-facing factory (V3 §12): wires PolicyNet + config from config.yaml [reinforce]."""
+        cfg = REINFORCEConfig.from_yaml(episodes=int(episodes))
+        policy = PolicyNet(hidden=cfg.policy_hidden, seed=seed)
         return cls(policy=policy, env=env, config=cfg, seed=seed)
 
     @property

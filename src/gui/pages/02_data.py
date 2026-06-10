@@ -46,8 +46,8 @@ def render() -> None:
     )
     with st.expander("ℹ️ What this page does", expanded=False):
         st.markdown(
-            "Hydrate the synthetic PHUL trainee and inspect the 28-day state "
-            "trajectory + per-day reward decomposition (brief §7.2)."
+            "Load the PHUL trainee (real Kaggle program, Optimized PHUL) and inspect "
+            "the 28-day state trajectory + per-day reward decomposition (brief §7.2)."
         )
     info_card("Data ingestion", _SECTION_BLURB)
     reference_callout(

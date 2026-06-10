@@ -20,6 +20,7 @@ from src.env.workout_env_helpers import (
     ACTION_VOLUME,
     build_step_info,
     normalised_share,
+    reward_config_from_yaml,
     update_muscle_share,
     zero_share,
 )
@@ -36,9 +37,15 @@ def _mask_service_from_config() -> ActionMaskService:
     )
 
 
+def _env_config_from_config() -> EnvConfig:
+    """Build EnvConfig with episode_length from config.yaml [environment]."""
+    return EnvConfig(episode_length=int(load_config()["environment"]["episode_length"]))
+
+
 @dataclass(frozen=True)
 class EnvConfig:
-    """Episode + target shape — algorithm-relevant, mirrored from config.yaml."""
+    """Episode + target shape. episode_length loads from config.yaml [environment]
+    (see _env_config_from_config); the target-shape fields are env-design constants."""
 
     episode_length: int = 28
     weekly_target_volume: float = 100.0
@@ -72,9 +79,9 @@ class WorkoutEnv:
         inject an ``LSTMEnvAdapter`` to roll out against the frozen world model.
         ``mask_service`` defaults to thresholds loaded from ``config.yaml``.
         """
-        self.cfg = env_config if env_config is not None else EnvConfig()
-        self._reward_cfg = reward_config
-        self._reward_fn = RewardFunction(reward_config)
+        self.cfg = env_config if env_config is not None else _env_config_from_config()
+        self._reward_cfg = reward_config if reward_config is not None else reward_config_from_yaml()
+        self._reward_fn = RewardFunction(self._reward_cfg)
         self._injected_trainee = trainee
         self._mask_service = mask_service if mask_service is not None else _mask_service_from_config()
         self._seed = int(seed)
